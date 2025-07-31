@@ -25,7 +25,7 @@ public class BettingAreaRenderer {
     private final BetManager betManager;
 
     public BettingAreaRenderer(final BetManager betManager, final ShapeRenderer shapeRenderer, final SpriteBatch batch, final BitmapFont font) {
-        this(betManager, shapeRenderer, batch, font, new Rectangle(0,0,720, 120));
+        this(betManager, shapeRenderer, batch, font, new Rectangle(0, 0, 720, 120));
     }
 
     public BettingAreaRenderer(final BetManager betManager, final ShapeRenderer shapeRenderer, final SpriteBatch batch, final BitmapFont font, final Rectangle bounds) {
@@ -57,37 +57,27 @@ public class BettingAreaRenderer {
         for (BetRegion region : regions) {
             for (Bet bet : betManager.getBets()) {
                 if (region instanceof NumberRegion && bet.getBetType() instanceof NumberBet) {
-                    if (((NumberRegion)region).getNumber() == ((NumberBet)bet.getBetType()).getNumber()) {
+                    if (((NumberRegion) region).getNumber() == ((NumberBet) bet.getBetType()).getNumber()) {
                         createChip(region, bet, currentMagnitude);
                     }
-                }
-
-                else if (region instanceof DozenRegion && bet.getBetType() instanceof DozenBet) {
-                    if (((DozenRegion)region).getDozen() == ((DozenBet)bet.getBetType()).getDozen()) {
+                } else if (region instanceof DozenRegion && bet.getBetType() instanceof DozenBet) {
+                    if (((DozenRegion) region).getDozen() == ((DozenBet) bet.getBetType()).getDozen()) {
                         createChip(region, bet, currentMagnitude);
                     }
-                }
-
-                else if (region instanceof ColumnRegion && bet.getBetType() instanceof ColumnBet) {
-                    if (((ColumnRegion)region).getColumn() == ((ColumnBet)bet.getBetType()).getColumn()) {
+                } else if (region instanceof ColumnRegion && bet.getBetType() instanceof ColumnBet) {
+                    if (((ColumnRegion) region).getColumn() == ((ColumnBet) bet.getBetType()).getColumn()) {
                         createChip(region, bet, currentMagnitude);
                     }
-                }
-
-                else if (region instanceof ParityRegion && bet.getBetType() instanceof ParityBet) {
-                    if (((ParityRegion)region).isEven() == ((ParityBet)bet.getBetType()).isEven()) {
+                } else if (region instanceof ParityRegion && bet.getBetType() instanceof ParityBet) {
+                    if (((ParityRegion) region).isEven() == ((ParityBet) bet.getBetType()).isEven()) {
                         createChip(region, bet, currentMagnitude);
                     }
-                }
-
-                else if (region instanceof ColorRegion && bet.getBetType() instanceof ColorBet) {
-                    if (((ColorRegion)region).getSegmentColor() == ((ColorBet)bet.getBetType()).getSegmentColor()) {
+                } else if (region instanceof ColorRegion && bet.getBetType() instanceof ColorBet) {
+                    if (((ColorRegion) region).getSegmentColor() == ((ColorBet) bet.getBetType()).getSegmentColor()) {
                         createChip(region, bet, currentMagnitude);
                     }
-                }
-
-                else if (region instanceof HalfRegion && bet.getBetType() instanceof HalfBet) {
-                    if (((HalfRegion)region).isLow() == ((HalfBet)bet.getBetType()).isLow()) {
+                } else if (region instanceof HalfRegion && bet.getBetType() instanceof HalfBet) {
+                    if (((HalfRegion) region).isLow() == ((HalfBet) bet.getBetType()).isLow()) {
                         createChip(region, bet, currentMagnitude);
                     }
                 }
@@ -99,7 +89,7 @@ public class BettingAreaRenderer {
         region.betValue = bet.getAmount();
         float centerX = region.getBounds().getX() + region.getBounds().getWidth() / 2f;
         float centerY = region.getBounds().getY() + region.getBounds().getHeight() / 2f;
-        region.chip = new Chip(new Circle(centerX, centerY,30), bet.getAmount(), 0, shapeRenderer, batch, font);
+        region.chip = new Chip(new Circle(centerX, centerY, 30), bet.getAmount(), 0, shapeRenderer, batch, font);
         int b = (int) (region.chip.getValue() / Math.pow(10, currentMagnitude));
         region.chip.color = region.chip.colorForValue(b);
     }
@@ -139,11 +129,16 @@ public class BettingAreaRenderer {
         float cellWidth = bounds.width / 12;
         float cellHeight = bounds.height / 3;
 
-        for (ColumnBet.Column column : ColumnBet.Column.values()) {
+        // order is important!
+        ColumnBet.Column[] cols = { ColumnBet.Column.FIRST_COLUMN_CONGRUENT_1,
+                                    ColumnBet.Column.SECOND_COLUMN_CONGRUENT_2,
+                                    ColumnBet.Column.THIRD_COLUMN_CONGRUENT_0 };
+
+        for (int i = 0; i < cols.length; i++) {
             float x = bounds.x + 12 * cellWidth;
-            float y = bounds.y + column.column * cellHeight; //TODO INCORRECT!
+            float y = bounds.y + i * cellHeight;
             Rectangle columnBounds = new Rectangle(x, y, cellWidth, cellHeight);
-            regions.add(new ColumnRegion(column, columnBounds, shapeRenderer, batch, font));
+            regions.add(new ColumnRegion(cols[i], columnBounds, shapeRenderer, batch, font));
         }
     }
 
@@ -211,7 +206,7 @@ public class BettingAreaRenderer {
     }
 
     public void render() {
-        for(BetRegion region : regions) {
+        for (BetRegion region : regions) {
             region.render();
         }
     }

@@ -22,7 +22,6 @@ import de.mario.roguelette.render.bet.ChipRenderer;
 import de.mario.roguelette.render.wheel.SegmentAngle;
 import de.mario.roguelette.render.wheel.WheelRenderer;
 import de.mario.roguelette.util.BetManager;
-import de.mario.roguelette.wheel.Segment;
 import de.mario.roguelette.wheel.WheelFactory;
 
 import java.util.Optional;
@@ -148,7 +147,7 @@ public class GameScreen implements Screen {
 
     private void updateChips() {
         balance = totalBalance - betManager.totalAmount();
-        chipRenderer.updateBalance(balance);
+        chipRenderer.updateBalance(balance - chipRenderer.getCurrentAmountInHand());
     }
 
     private void handleInput() {
