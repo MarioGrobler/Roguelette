@@ -131,7 +131,9 @@ public class Chip {
     public String getLabel() {
         int value = getValue();
         if (value % 1000000 == 0) return (value / 1000000) + "M";
+        if (value > 1000000 && value % 100000 == 0) return String.format("%.1fM", value / 1000000f);
         if (value % 1000 == 0) return (value / 1000) + "K";
+        if (value > 1000 && value % 100 == 0) return String.format("%.1fK", value / 1000f);
         return String.valueOf(value);
     }
 

@@ -175,6 +175,10 @@ public class GameScreen implements Screen {
                     @Override
                     public void onSpinEnd() {
                         totalBalance += betManager.computeReturn(s.getSegment());
+                        if (totalBalance <= 0) {
+                            // dead
+                            game.setScreen(new GameOverScreen(game));
+                        }
                         betManager.clear();
                         updateChips();
                         bettingAreaRenderer.updateBetValues(chipRenderer.getCurrentMagnitude());
@@ -182,6 +186,7 @@ public class GameScreen implements Screen {
                 });
             }
 
+            // TODO probably disable input while wheel is spinning
             if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
                 if (chipRenderer.handleLeftClick(touchPos.x, touchPos.y)) {
                     updateChips();
