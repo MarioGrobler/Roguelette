@@ -20,6 +20,7 @@ public class ChipRenderer {
     private float angleStart;
     private float chipRadius;
 
+    // TODO move this
     private Chip chipInHand;
 
     private final List<Chip> chips = new ArrayList<>();

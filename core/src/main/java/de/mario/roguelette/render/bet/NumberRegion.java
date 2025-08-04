@@ -10,7 +10,7 @@ import de.mario.roguelette.betting.NumberBet;
 import de.mario.roguelette.wheel.RouletteRules;
 import de.mario.roguelette.wheel.Segment;
 
-public class NumberRegion extends BetRegion {
+public class NumberRegion extends RectRegion {
 
     private final int number;
 

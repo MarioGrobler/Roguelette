@@ -7,7 +7,7 @@ import com.badlogic.gdx.math.Rectangle;
 import de.mario.roguelette.betting.Bet;
 import de.mario.roguelette.betting.HalfBet;
 
-public class HalfRegion extends BetRegion {
+public class HalfRegion extends RectRegion {
     private final boolean low; // true: 1-18, false: 19-36
 
     protected HalfRegion(boolean low, Rectangle bounds, ShapeRenderer shapeRenderer, SpriteBatch batch, BitmapFont font) {

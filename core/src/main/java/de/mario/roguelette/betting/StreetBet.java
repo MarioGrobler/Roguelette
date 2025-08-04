@@ -2,6 +2,8 @@ package de.mario.roguelette.betting;
 
 public class StreetBet extends RangeBet {
 
+    private final Street street;
+
     public enum Street {
         STREET_1_TO_3(0),
         STREET_4_TO_6(1),
@@ -18,17 +20,27 @@ public class StreetBet extends RangeBet {
 
         public final int street;
 
-        private Street(int street) {
+        Street(int street) {
             this.street = street;
         }
     }
 
-    protected StreetBet(Street street) {
+    public StreetBet(Street street) {
         super(street.street * 3 + 1, (street.street + 1) * 3);
+        this.street = street;
     }
 
     @Override
     public float getPayoutMultiplier() {
         return 12f;
+    }
+
+    @Override
+    public boolean isInsideBet() {
+        return true;
+    }
+
+    public Street getStreet() {
+        return street;
     }
 }

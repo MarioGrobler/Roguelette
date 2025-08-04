@@ -10,12 +10,16 @@ import java.util.Iterator;
 import java.util.List;
 
 public class BetManager {
-    private final List<Bet> bets = new ArrayList<Bet>();
+    private final List<Bet> bets = new ArrayList<>();
 
     public void clear() {
         bets.clear();
     }
 
+    /**
+     * Adds the given bet. If there is also ready a bet with equivalent bet type, increase the amount of this bet instead.
+     * @param bet the bet to add or update
+     */
     public void addBet(final Bet bet) {
         for (Bet b : bets) {
             if (b.getBetType().equals(bet.getBetType())) {
@@ -31,7 +35,7 @@ public class BetManager {
         while (iterator.hasNext()) {
             Bet b = iterator.next();
             if (b.getBetType().equals(betType)) {
-                iterator.remove(); // should be ok as there is at most fitting element by design
+                iterator.remove(); // should be ok as there is at most one fitting element by design
                 break;
             }
         }

@@ -7,7 +7,7 @@ import com.badlogic.gdx.math.Rectangle;
 import de.mario.roguelette.betting.Bet;
 import de.mario.roguelette.betting.DozenBet;
 
-public class DozenRegion extends BetRegion {
+public class DozenRegion extends RectRegion {
 
     private final DozenBet.Dozen dozen;
 

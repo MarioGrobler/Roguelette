@@ -14,6 +14,7 @@ public class Chip {
     private final BitmapFont font;
 
     private final Circle bounds;
+    private float fontScale = 1.2f;
 
     // actual value = base * 10^magnitude
     private int base;
@@ -92,7 +93,7 @@ public class Chip {
         // value
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         batch.begin();
-        font.getData().setScale(1.2f);
+        font.getData().setScale(fontScale);
         font.setColor(Color.WHITE);
         GlyphLayout layout = new GlyphLayout(font, getLabel());
         font.draw(batch, layout, bounds.x - layout.width / 2, bounds.y + layout.height / 2);
@@ -126,6 +127,14 @@ public class Chip {
 
     public int getValue() {
         return base * (int) Math.pow(10, magnitude);
+    }
+
+    public float getFontScale() {
+        return fontScale;
+    }
+
+    public void setFontScale(float fontScale) {
+        this.fontScale = fontScale;
     }
 
     public String getLabel() {

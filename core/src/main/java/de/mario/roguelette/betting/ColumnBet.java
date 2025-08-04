@@ -55,6 +55,11 @@ public class ColumnBet implements BetType {
     }
 
     @Override
+    public boolean isInsideBet() {
+        return false;
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         ColumnBet columnBet = (ColumnBet) o;

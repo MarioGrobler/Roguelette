@@ -1,5 +1,6 @@
 package de.mario.roguelette.betting;
 
+import de.mario.roguelette.exception.GameException;
 import de.mario.roguelette.wheel.*;
 
 import java.util.Objects;
@@ -9,19 +10,22 @@ public class NumberBet implements BetType {
     private final int number;
 
     public NumberBet(int number) {
+        if (number < 0 || number > 36) {
+            throw new GameException("illegal roulette number");
+        }
         this.number = number;
     }
 
     @Override
     public boolean isWinningSegment(Segment segment) {
-        if(segment instanceof NumberSegment) {
+        if (segment instanceof NumberSegment) {
             return ((NumberSegment)segment).getNumber() == number;
         }
-        if(segment instanceof JokerNumberRangeSegment) {
+        if (segment instanceof JokerNumberRangeSegment) {
             JokerNumberRangeSegment range = (JokerNumberRangeSegment)segment;
             return range.getMin() <= number && number <= range.getMax();
         }
-        if(segment instanceof JokerColorSegment) {
+        if (segment instanceof JokerColorSegment) {
             return RouletteRules.getStandardColor(number) == segment.getColor(); //TODO this might break if the betting area changes due to some effect
         }
         return false;
@@ -30,6 +34,14 @@ public class NumberBet implements BetType {
     @Override
     public float getPayoutMultiplier() {
         return 36f;
+    }
+
+    /**
+     * @return false (!)
+     */
+    @Override
+    public boolean isInsideBet() {
+        return false;
     }
 
     @Override

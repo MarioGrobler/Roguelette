@@ -11,6 +11,7 @@ import de.mario.roguelette.wheel.Segment;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Optional;
 
 public class BettingAreaRenderer {
@@ -40,18 +41,26 @@ public class BettingAreaRenderer {
     }
 
     private void buildLayout() {
+
+        // first build non-inside bets...
         buildNumberGrid();
         buildDozenGrid();
         buildColumnGrid();
         buildParityFields();
         buildColorFields();
         buildHalfFields();
+
+        // then build inside bets to have them "on top"
+        buildStreetFields();
+        buildSixLineFields();
+        buildCornerFields();
+        buildHorizontalSplitFields();
+        buildVerticalSplitFields();
     }
 
     public void updateBetValues(int currentMagnitude) {
         for (BetRegion region : regions) {
-            region.betValue = 0;
-            region.chip = null; //TODO this is also not elegant
+            region.deleteChip();
         }
 
         for (BetRegion region : regions) {
@@ -80,16 +89,33 @@ public class BettingAreaRenderer {
                     if (((HalfRegion) region).isLow() == ((HalfBet) bet.getBetType()).isLow()) {
                         createChip(region, bet, currentMagnitude);
                     }
+                } else if (region instanceof StreetRegion && bet.getBetType() instanceof StreetBet) {
+                    if (((StreetRegion) region).getStreet() == ((StreetBet) bet.getBetType()).getStreet()) {
+                        createChip(region, bet, currentMagnitude);
+                    }
+                } else if (region instanceof SixLineRegion && bet.getBetType() instanceof SixLineBet) {
+                    if (((SixLineRegion) region).getSixLine() == ((SixLineBet) bet.getBetType()).getSixLine()) {
+                        createChip(region, bet, currentMagnitude);
+                    }
+                } else if (region instanceof CornerRegion && bet.getBetType() instanceof CornerBet) {
+                    if (((CornerRegion) region).getFirstNumber() == ((CornerBet) bet.getBetType()).getFirstNumber()) {
+                        createChip(region, bet, currentMagnitude);
+                    }
+                } else if (region instanceof HorizontalSplitRegion && bet.getBetType() instanceof HorizontalSplitBet) {
+                    if (((HorizontalSplitRegion) region).getFirstNumber() == ((HorizontalSplitBet) bet.getBetType()).getFirstNumber()) {
+                        createChip(region, bet, currentMagnitude);
+                    }
+                } else if (region instanceof VerticalSplitRegion && bet.getBetType() instanceof VerticalSplitBet) {
+                    if (((VerticalSplitRegion) region).getFirstNumber() == ((VerticalSplitBet) bet.getBetType()).getFirstNumber()) {
+                        createChip(region, bet, currentMagnitude);
+                    }
                 }
             }
         }
     }
 
     private void createChip(BetRegion region, Bet bet, int currentMagnitude) {
-        region.betValue = bet.getAmount();
-        float centerX = region.getBounds().getX() + region.getBounds().getWidth() / 2f;
-        float centerY = region.getBounds().getY() + region.getBounds().getHeight() / 2f;
-        region.chip = new Chip(new Circle(centerX, centerY, 30), bet.getAmount(), 0, shapeRenderer, batch, font);
+        region.makeChip(bet.getAmount());
         int b = (int) (region.chip.getValue() / Math.pow(10, currentMagnitude));
         region.chip.color = region.chip.colorForValue(b);
     }
@@ -130,9 +156,9 @@ public class BettingAreaRenderer {
         float cellHeight = bounds.height / 3;
 
         // order is important!
-        ColumnBet.Column[] cols = { ColumnBet.Column.FIRST_COLUMN_CONGRUENT_1,
-                                    ColumnBet.Column.SECOND_COLUMN_CONGRUENT_2,
-                                    ColumnBet.Column.THIRD_COLUMN_CONGRUENT_0 };
+        ColumnBet.Column[] cols = {ColumnBet.Column.FIRST_COLUMN_CONGRUENT_1,
+            ColumnBet.Column.SECOND_COLUMN_CONGRUENT_2,
+            ColumnBet.Column.THIRD_COLUMN_CONGRUENT_0};
 
         for (int i = 0; i < cols.length; i++) {
             float x = bounds.x + 12 * cellWidth;
@@ -184,11 +210,79 @@ public class BettingAreaRenderer {
         regions.add(new HalfRegion(false, highBounds, shapeRenderer, batch, font));
     }
 
+    private void buildStreetFields() {
+        float cellWidth = bounds.width / 12;
+        float y = bounds.y;
+
+        for (StreetBet.Street street : StreetBet.Street.values()) {
+            float x = bounds.x + (street.street + 0.5f) * cellWidth;
+            Circle bounds = new Circle(x, y, 15);
+            regions.add(new StreetRegion(street, bounds, shapeRenderer, batch, font));
+        }
+    }
+
+    private void buildSixLineFields() {
+        float cellWidth = bounds.width / 12;
+        float y = bounds.y;
+
+        for (SixLineBet.SixLine sixLine : SixLineBet.SixLine.values()) {
+            float x = bounds.x + (sixLine.sixLine + 1) * cellWidth;
+            Circle bounds = new Circle(x, y, 15);
+            regions.add(new SixLineRegion(sixLine, bounds, shapeRenderer, batch, font));
+        }
+    }
+
+    private void buildCornerFields() {
+        float cellWidth = bounds.width / 12;
+        float cellHeight = bounds.height / 3;
+
+        for (int i = 1; i <= 32; i++) {
+            if (i % 3 == 0) continue;
+
+            float x = bounds.x + ((i - 1) / 3 + 1) * cellWidth;
+            float y = bounds.y + (i % 3) * cellHeight;
+            Circle bounds = new Circle(x, y, 15);
+            regions.add(new CornerRegion(i, bounds, shapeRenderer, batch, font));
+        }
+    }
+
+    private void buildHorizontalSplitFields() {
+        float cellWidth = bounds.width / 12;
+        float cellHeight = bounds.height / 3;
+
+        for (int i = 1; i <= 35; i++) {
+            if (i % 3 == 0) continue;
+
+            float x = bounds.x + ((i - 1) / 3 + 0.5f) * cellWidth;
+            float y = bounds.y + (i % 3) * cellHeight;
+            Circle bounds = new Circle(x, y, 15);
+            regions.add(new HorizontalSplitRegion(i, bounds, shapeRenderer, batch, font));
+        }
+    }
+
+    private void buildVerticalSplitFields() {
+        float cellWidth = bounds.width / 12;
+        float cellHeight = bounds.height / 3;
+
+        for (int i = 1; i <= 33; i++) {
+
+            float x = bounds.x + ((i - 1) / 3 + 1) * cellWidth;
+            int m = i % 3;
+            float y = bounds.y + ((m == 0 ? 3 : m) - 0.5f) * cellHeight;
+            Circle bounds = new Circle(x, y, 15);
+            regions.add(new VerticalSplitRegion(i, bounds, shapeRenderer, batch, font));
+        }
+    }
+
     public Optional<Bet> handleLeftClick(float x, float y, int amount) {
         if (amount == 0) {
             return Optional.empty();
         }
-        for (BetRegion region : regions) {
+
+        // iterate through the list reversed, as the inside bets are the last entries, and they need to be handled first
+        ListIterator<BetRegion> li = regions.listIterator(regions.size());
+        while (li.hasPrevious()) {
+            BetRegion region = li.previous();
             if (region.contains(x, y)) {
                 return Optional.of(region.createBet(amount));
             }
@@ -197,9 +291,12 @@ public class BettingAreaRenderer {
     }
 
     public Optional<BetType> handleRightClick(float x, float y) {
-        for (BetRegion region : regions) {
+        // iterate through the list reversed, as the inside bets are the last entries, and they need to be handled first
+        ListIterator<BetRegion> li = regions.listIterator(regions.size());
+        while (li.hasPrevious()) {
+            BetRegion region = li.previous();
             if (region.contains(x, y)) {
-                return Optional.of(region.createBet(region.betValue).getBetType());
+                return Optional.of(region.createBet(0).getBetType());
             }
         }
         return Optional.empty();

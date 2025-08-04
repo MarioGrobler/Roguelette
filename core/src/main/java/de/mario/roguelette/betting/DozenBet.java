@@ -1,7 +1,5 @@
 package de.mario.roguelette.betting;
 
-import de.mario.roguelette.wheel.*;
-
 public class DozenBet extends RangeBet {
 
     private final Dozen dozen;
@@ -13,7 +11,7 @@ public class DozenBet extends RangeBet {
 
         public final int dozen;
 
-        private Dozen(int dozen) {
+        Dozen(int dozen) {
             this.dozen = dozen;
         }
 
@@ -40,6 +38,11 @@ public class DozenBet extends RangeBet {
     @Override
     public float getPayoutMultiplier() {
         return 3f;
+    }
+
+    @Override
+    public boolean isInsideBet() {
+        return false;
     }
 
     public Dozen getDozen() {

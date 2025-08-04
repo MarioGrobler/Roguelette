@@ -17,6 +17,11 @@ public class HalfBet extends RangeBet {
         return 2f;
     }
 
+    @Override
+    public boolean isInsideBet() {
+        return false;
+    }
+
     public boolean isLow() {
         return low;
     }

@@ -6,9 +6,8 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Rectangle;
 import de.mario.roguelette.betting.Bet;
 import de.mario.roguelette.betting.ColumnBet;
-import de.mario.roguelette.betting.DozenBet;
 
-public class ColumnRegion extends BetRegion {
+public class ColumnRegion extends RectRegion {
 
     private final ColumnBet.Column column;
 

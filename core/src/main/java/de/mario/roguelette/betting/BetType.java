@@ -12,4 +12,10 @@ public interface BetType {
      * @return the payout multiplier (eg 2x for color, 36x for single number)
      */
     float getPayoutMultiplier();
+
+    /**
+     * @return is the bet an inside bet (split, street, ...).
+     * Caution! For simplicity reasons we consider {@link NumberBet}s to be <i>not</i> inside bets!
+     */
+    boolean isInsideBet();
 }

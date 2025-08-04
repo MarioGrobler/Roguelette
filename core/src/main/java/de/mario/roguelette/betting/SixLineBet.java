@@ -2,6 +2,8 @@ package de.mario.roguelette.betting;
 
 public class SixLineBet extends RangeBet {
 
+    private final SixLine sixLine;
+
     public enum SixLine {
         SIX_LINE_1_TO_6(0),
         SIX_LINE_4_TO_9(1),
@@ -17,17 +19,27 @@ public class SixLineBet extends RangeBet {
 
         public final int sixLine;
 
-        private SixLine(int sixLine) {
+        SixLine(int sixLine) {
             this.sixLine = sixLine;
         }
     }
 
-    protected SixLineBet(SixLine sixLine) {
+    public SixLineBet(SixLine sixLine) {
         super(sixLine.sixLine * 3 + 1, (sixLine.sixLine + 2) * 3);
+        this.sixLine = sixLine;
     }
 
     @Override
     public float getPayoutMultiplier() {
         return 6f;
+    }
+
+    @Override
+    public boolean isInsideBet() {
+        return true;
+    }
+
+    public SixLine getSixLine() {
+        return sixLine;
     }
 }

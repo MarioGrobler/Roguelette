@@ -27,6 +27,11 @@ public class ColorBet implements BetType {
     }
 
     @Override
+    public boolean isInsideBet() {
+        return false;
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         ColorBet colorBet = (ColorBet) o;

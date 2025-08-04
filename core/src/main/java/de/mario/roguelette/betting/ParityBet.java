@@ -37,6 +37,11 @@ public class ParityBet implements BetType {
     }
 
     @Override
+    public boolean isInsideBet() {
+        return false;
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         ParityBet parityBet = (ParityBet) o;

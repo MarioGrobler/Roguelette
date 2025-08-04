@@ -9,13 +9,13 @@ import de.mario.roguelette.betting.Bet;
 import de.mario.roguelette.betting.ColorBet;
 import de.mario.roguelette.wheel.Segment;
 
-public class ColorRegion extends BetRegion {
+public class ColorRegion extends RectRegion {
 
-    private final Segment.SegmentColor color;
+    private final Segment.SegmentColor segmentColor;
 
     protected ColorRegion(Segment.SegmentColor color, Rectangle bounds, ShapeRenderer shapeRenderer, SpriteBatch batch, BitmapFont font) {
         super(bounds, shapeRenderer, batch, font);
-        this.color = color;
+        this.segmentColor = color;
     }
 
     @Override
@@ -32,7 +32,7 @@ public class ColorRegion extends BetRegion {
 
         // Color as diamond
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        shapeRenderer.setColor(color == Segment.SegmentColor.RED ? Color.RED : Color.BLACK);
+        shapeRenderer.setColor(segmentColor == Segment.SegmentColor.RED ? Color.RED : Color.BLACK);
         shapeRenderer.triangle(verts[0], verts[1], verts[2], verts[3], verts[4], verts[5]);
         shapeRenderer.triangle(verts[0], verts[1], verts[6], verts[7], verts[4], verts[5]);
         shapeRenderer.end();
@@ -51,7 +51,7 @@ public class ColorRegion extends BetRegion {
 
     @Override
     public Bet createBet(int amount) {
-        return new Bet(new ColorBet(color), amount);
+        return new Bet(new ColorBet(segmentColor), amount);
     }
 
     @Override
@@ -60,6 +60,6 @@ public class ColorRegion extends BetRegion {
     }
 
     public Segment.SegmentColor getSegmentColor() {
-        return color;
+        return segmentColor;
     }
 }
