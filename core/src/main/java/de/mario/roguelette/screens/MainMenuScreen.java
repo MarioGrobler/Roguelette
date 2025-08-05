@@ -12,8 +12,6 @@ import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.ScreenUtils;
 import de.mario.roguelette.RougeletteGame;
 
-import javax.swing.*;
-
 public class MainMenuScreen implements Screen {
 
     private final Color BACKGROUND_COLOR = new Color(0x110F0Cff);

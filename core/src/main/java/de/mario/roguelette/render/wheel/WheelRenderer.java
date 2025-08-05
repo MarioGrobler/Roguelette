@@ -4,24 +4,26 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Circle;
 import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.utils.Align;
+import de.mario.roguelette.GameState;
 import de.mario.roguelette.animator.BallAnimator;
 import de.mario.roguelette.animator.WheelAnimator;
+import de.mario.roguelette.render.SegmentDraw;
 import de.mario.roguelette.wheel.Segment;
-import de.mario.roguelette.wheel.Wheel;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class WheelRenderer {
     private final ShapeRenderer shapeRenderer;
     private final SpriteBatch batch;
     private final BitmapFont font;
+
+    private final GameState gameState;
 
     private float anglePerSegment;
 
@@ -32,75 +34,33 @@ public class WheelRenderer {
     private float outerRadius;
     private float ballRadius = 10f;
 
-    private Wheel wheel;
     private final WheelAnimator wheelAnimator;
     private final BallAnimator ballAnimator;
-    private final List<SegmentAngle> segmentAngles = new ArrayList<>();
+    private final List<SegmentDraw> segmentDraws = new ArrayList<>();
 
 
-    private Color getDrawingColorFromSegment(final Segment segment) {
-        if (segment == null) {
-            return Color.PINK;
-        }
-
-        switch(segment.getColor()) {
-            case RED:
-                return Color.RED;
-            case BLACK:
-                return Color.BLACK;
-            case NONE:
-                return Color.FOREST;
-            case BOTH: //TODO: a more complex pattern here
-                return new Color(128, 0, 0, 1);
-            default: // should be unreachable
-                return Color.PINK;
-        }
-    }
-
-    private void drawSegmentArc(final float cx, final float cy, final float radius, final float startDeg, final float sweepDeg) {
-        int smoothness = 10; // approximate an arc by actually drawing 10 triangles
-        float angleStep = sweepDeg / smoothness;
-
-        float[] verts = new float[(smoothness + 2) * 2];
-        verts[0] = cx;
-        verts[1] = cy;
-
-        for (int i = 0; i <= smoothness; i++) {
-            float angle = startDeg + i * angleStep;
-            float rad = MathUtils.degreesToRadians * angle;
-            verts[2 * i + 2] = cx + MathUtils.cos(rad) * radius;
-            verts[2 * i + 3] = cy + MathUtils.sin(rad) * radius;
-        }
-
-        shapeRenderer.triangle(verts[0], verts[1], verts[2], verts[3], verts[4], verts[5]);
-        for (int i = 1; i < smoothness; i++) {
-            shapeRenderer.triangle(
-                cx, cy,
-                verts[2 * i + 2], verts[2 * i + 3],
-                verts[2 * i + 4], verts[2 * i + 5]
-            );
-        }
+    private SegmentDraw createSegmentDraw(final Segment segment, float startAngle) {
+        SegmentDraw sd = new SegmentDraw(segment, shapeRenderer, batch, font, centerX, centerY, wheelRadius, 0f);
+        sd.setStartAngle(startAngle);
+        sd.setSweepAngle(anglePerSegment);
+        return sd;
     }
 
     private void updateAnglePerSegment() {
-        anglePerSegment = 360f / wheel.size();
-        segmentAngles.clear();
-        for (int i = 0; i < wheel.size(); i++) {
+        anglePerSegment = 360f / gameState.getWheel().size();
+        segmentDraws.clear();
+        for (int i = 0; i < gameState.getWheel().size(); i++) {
             float start = i * anglePerSegment;
-            float end = start + anglePerSegment;
-            segmentAngles.add(new SegmentAngle(wheel.getSegmentAt(i), start, end));
+            //TODO calling createSegmentDraw here might be unnecessarily expensive
+            segmentDraws.add(createSegmentDraw(gameState.getWheel().getSegmentAt(i), start));
         }
     }
 
-    public WheelRenderer(final Wheel wheel, final ShapeRenderer shapeRenderer, final SpriteBatch batch, final BitmapFont font) {
-        this(wheel, shapeRenderer, batch, font, 500, 300, 600, 650, 650);
-    }
-
-    public WheelRenderer(final Wheel wheel, final ShapeRenderer shapeRenderer, final SpriteBatch batch, final BitmapFont font, float wheelRadius, float innerRadius, float outerRadius, float centerX, float centerY) {
-        this.wheel = wheel;
+    public WheelRenderer(final ShapeRenderer shapeRenderer, final SpriteBatch batch, final BitmapFont font, final GameState gameState, float wheelRadius, float innerRadius, float outerRadius, float centerX, float centerY) {
         this.shapeRenderer = shapeRenderer;
         this.batch = batch;
         this.font = font;
+        this.gameState = gameState;
 
         this.centerX = centerX;
         this.centerY = centerY;
@@ -114,8 +74,7 @@ public class WheelRenderer {
         updateAnglePerSegment();
     }
 
-    public void updateWheel(final Wheel newWheel) {
-        this.wheel = newWheel;
+    public void updateWheel() {
         updateAnglePerSegment();
     }
 
@@ -123,22 +82,29 @@ public class WheelRenderer {
      * @param angle the angle in degree (0 - 360)
      */
     public Segment getCurrentSegment(float angle) {
-        return getCurrentSegmentAngle(angle).getSegment();
-    }
-
-    public SegmentAngle getCurrentSegmentAngle(float angle) {
         float actualAngle = wheelAnimator.normalizeAngle(angle - wheelAnimator.getRotationAngle());
-        for  (SegmentAngle segmentAngle : segmentAngles) {
-            if (actualAngle >= segmentAngle.getStartAngle() && actualAngle < segmentAngle.getEndAngle()) {
-                return segmentAngle;
+        for (SegmentDraw sd : segmentDraws) {
+            if (actualAngle >= sd.getStartAngle() && actualAngle < sd.getEndAngle()) {
+                return sd.getSegment();
             }
         }
         //360°
-        return segmentAngles.get(0);
+        return segmentDraws.get(0).getSegment();
+    }
+
+    public float getCurrentSegmentStartAngle(float angle) {
+        float actualAngle = wheelAnimator.normalizeAngle(angle - wheelAnimator.getRotationAngle());
+        for (SegmentDraw sd : segmentDraws) {
+            if (actualAngle >= sd.getStartAngle() && actualAngle < sd.getEndAngle()) {
+                return sd.getStartAngle();
+            }
+        }
+        //360°
+        return segmentDraws.get(0).getStartAngle();
     }
 
     public void render() {
-        int segmentCount = wheel.size();
+        int segmentCount = gameState.getWheel().size();
         float rotationAngle = wheelAnimator.getRotationAngle();
 
         //render outer ring
@@ -160,13 +126,9 @@ public class WheelRenderer {
         Gdx.gl.glDisable(GL20.GL_BLEND);
 
         // render segments
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        for (SegmentAngle segmentAngle : segmentAngles) {
-            final Segment segment = segmentAngle.getSegment();
-            shapeRenderer.setColor(getDrawingColorFromSegment(segment));
-            shapeRenderer.arc(centerX, centerY, wheelRadius, segmentAngle.getStartAngle() + rotationAngle, anglePerSegment, 10);
+        for (SegmentDraw sd : segmentDraws) {
+            sd.render(rotationAngle);
         }
-        shapeRenderer.end();
 
         // render lines between segments
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
@@ -188,34 +150,6 @@ public class WheelRenderer {
         shapeRenderer.circle(centerX, centerY, innerRadius);
         shapeRenderer.end();
 
-        // draw texts
-        batch.begin();
-        font.getData().setScale(1.5f);
-        for(int i = 0; i < segmentCount; i++) {
-            Segment segment = wheel.getSegmentAt(i);
-            float angle = (i + .5f) * anglePerSegment + rotationAngle;
-
-            float textRadius = wheelRadius * .9f;
-
-            float x = centerX + MathUtils.cosDeg(angle) * textRadius;
-            float y = centerY + MathUtils.sinDeg(angle) * textRadius;
-
-            String text = segment.getDisplayText();
-
-            // Rotate the text with the wheel
-            GlyphLayout layout = new GlyphLayout(font, text, Color.WHITE, 0, Align.right, false);
-            float originX = layout.width / 2;
-            float originY = layout.height / 2;
-
-            batch.setTransformMatrix(batch.getTransformMatrix().idt()
-                .translate(x,y,0)
-                .rotate(0,0,1, angle)
-                .translate(originX, originY,0)
-            );
-
-            font.draw(batch, layout, 0, 0);
-        }
-        batch.end();
 
         // draw ball
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
@@ -223,13 +157,13 @@ public class WheelRenderer {
         shapeRenderer.circle(ballAnimator.getX(centerX), ballAnimator.getY(centerY), ballRadius);
         shapeRenderer.end();
 
+
         // draw current segment
         batch.begin();
         batch.setTransformMatrix(batch.getTransformMatrix().idt());
         font.setColor(Color.WHITE);
         font.draw(batch, "Current number: " + getCurrentSegment(ballAnimator.getRotationAngle()).getDisplayText(), 50, 50);
         batch.end();
-
 
 
         // Cone of light
@@ -357,6 +291,16 @@ public class WheelRenderer {
 
     public boolean contains(float x, float y) {
         return new Circle(centerX, centerY, outerRadius).contains(x, y);
+    }
+
+    public Optional<Segment> getSegmentAt(float x, float y) {
+        Circle wheelCircle = new Circle(centerX, centerY, wheelRadius);
+        Circle innerCircle = new Circle(centerX, centerY, innerRadius);
+        if (wheelCircle.contains(x, y) && !innerCircle.contains(x, y)) {
+            float angle = MathUtils.atan2Deg360(y - centerY, x - centerX);
+            return Optional.of(getCurrentSegment(angle));
+        }
+        return Optional.empty();
     }
 
 }

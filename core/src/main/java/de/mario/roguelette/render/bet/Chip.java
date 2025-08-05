@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Circle;
 import com.badlogic.gdx.math.MathUtils;
+import de.mario.roguelette.util.ColorHelper;
 
 public class Chip {
     private final ShapeRenderer shapeRenderer;
@@ -51,18 +52,11 @@ public class Chip {
     }
 
     public void render() {
-        Color darkColor = new Color(color.r * 0.7f, color.g * 0.7f, color.b * 0.7f, color.a);
-
         // to grayscale if unavailable
         if (!available) {
-            //they should rename "mul" to "fuck up your graphics
-            //color = color.mul(0.299f, 0.587f, 0.114f, 1f);
-            float gray = color.r * 0.299f + color.g * 0.587f + color.b * 0.114f;
-            color = new Color(gray, gray, gray, 1f);
-
-            float darkGray = darkColor.r * 0.299f + darkColor.g * 0.587f + darkColor.b * 0.114f;
-            darkColor = new Color(darkGray, darkGray, darkGray, 1f);
+            color = ColorHelper.grayscale(color);
         }
+        Color darkColor = ColorHelper.darker(color);
 
         // border
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);

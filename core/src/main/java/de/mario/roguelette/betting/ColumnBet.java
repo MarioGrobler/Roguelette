@@ -16,7 +16,7 @@ public class ColumnBet implements BetType {
 
         public final int column;
 
-        private Column(final int column) {
+        Column(final int column) {
             this.column = column;
         }
 

@@ -12,16 +12,19 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.ScreenUtils;
+import de.mario.roguelette.GameState;
+import de.mario.roguelette.Player;
 import de.mario.roguelette.RougeletteGame;
 import de.mario.roguelette.animator.WheelAnimator;
 import de.mario.roguelette.betting.Bet;
 import de.mario.roguelette.betting.BetType;
 import de.mario.roguelette.render.bet.BettingAreaRenderer;
-import de.mario.roguelette.render.bet.Chip;
 import de.mario.roguelette.render.bet.ChipRenderer;
-import de.mario.roguelette.render.wheel.SegmentAngle;
+import de.mario.roguelette.render.shop.ShopRenderer;
 import de.mario.roguelette.render.wheel.WheelRenderer;
 import de.mario.roguelette.util.BetManager;
+import de.mario.roguelette.wheel.Segment;
+import de.mario.roguelette.wheel.Wheel;
 import de.mario.roguelette.wheel.WheelFactory;
 
 import java.util.Optional;
@@ -38,21 +41,22 @@ public class GameScreen implements Screen {
     private WheelRenderer wheelRenderer;
     private BettingAreaRenderer bettingAreaRenderer;
     private ChipRenderer chipRenderer;
+    private ShopRenderer shopRenderer;
 
-    private int totalBalance;
-    private int balance; // totalBalance - amount currently in Hand
-
-    private final BetManager betManager;
+    private GameState gameState;
 
     public GameScreen(RougeletteGame game) {
         this.game = game;
-        this.totalBalance = 1000000;
-        this.balance = this.totalBalance;
-        this.betManager = new BetManager();
     }
+
 
     @Override
     public void show() {
+        Player player = new Player(1000000, "Yannik");
+        Wheel wheel = WheelFactory.createClassicWheel();
+        BetManager betManager = new BetManager();
+        gameState = new GameState(player, wheel, betManager);
+
         camera = new OrthographicCamera();
         camera.setToOrtho(false, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 
@@ -61,20 +65,31 @@ public class GameScreen implements Screen {
         font = new BitmapFont();
         font.getData().setScale(1.5f);
 
-        float radius = Gdx.graphics.getHeight() / 3f;
-        float centerY = Gdx.graphics.getHeight() / 2f;
-        wheelRenderer = new WheelRenderer(WheelFactory.createClassicWheel(), shapeRenderer, batch, font, radius, radius*0.6f, radius*1.2f, radius*1.2f + 50, centerY);
 
-        float startX = Gdx.graphics.getWidth() / 2f + 25;
-        float w = Gdx.graphics.getWidth() * 2f / 5f;
-        float h = w / 4;
-        float startY = Gdx.graphics.getHeight() - h - 20;
-        bettingAreaRenderer = new BettingAreaRenderer(betManager, shapeRenderer, batch, font, new Rectangle(startX, startY, w, h));
+        float wheelRadius = Gdx.graphics.getHeight() / 3f;
+        float wheelInnerRadius = wheelRadius * 0.6f;
+        float wheelOuterRadius = wheelRadius * 1.2f;
+        float wheelCenterX = wheelRadius * 1.2f + 50;
+        float wheelCenterY = Gdx.graphics.getHeight() / 2f;
+        wheelRenderer = new WheelRenderer(shapeRenderer, batch, font, gameState, wheelRadius, wheelInnerRadius, wheelOuterRadius, wheelCenterX, wheelCenterY);
 
-        float centerX = startX + w / 2f;
-        centerY = Gdx.graphics.getHeight() / 5f;
-        chipRenderer = new ChipRenderer(shapeRenderer, batch, font, centerX, centerY, radius*1.3f,  50, 30);
-        chipRenderer.updateBalance(totalBalance);
+        float betStartX = Gdx.graphics.getWidth() / 2f + 25;
+        float betWidth = Gdx.graphics.getWidth() * 2f / 5f;
+        float betHeight = betWidth / 4;
+        float betStartY = Gdx.graphics.getHeight() - betHeight - 20;
+        bettingAreaRenderer = new BettingAreaRenderer(shapeRenderer, batch, font, gameState, new Rectangle(betStartX, betStartY, betWidth, betHeight));
+
+        float chipStartX = betStartX;
+        float chipWidth = betWidth;
+        float chipStartY = betStartY - betHeight;
+        float chipRadius = 30;
+        chipRenderer = new ChipRenderer(shapeRenderer, batch, font, gameState, new Rectangle(chipStartX, chipStartY, chipWidth,0) , chipRadius);
+
+        float shopStartX = betStartX;
+        float shopStartY = 20f;
+        float shopWidth = betWidth;
+        float shopHeight = Gdx.graphics.getHeight() / 2f;
+        shopRenderer = new ShopRenderer(shapeRenderer, batch, font, new Rectangle(shopStartX, shopStartY, shopWidth, shopHeight));
     }
 
     @Override
@@ -89,7 +104,7 @@ public class GameScreen implements Screen {
         batch.begin();
         font.setColor(Color.WHITE);
         font.getData().setScale(3f);
-        font.draw(batch, "$" + balance, 50, Gdx.graphics.getHeight() - 50);
+        font.draw(batch, "$" + gameState.getBalanceMinusBets(), 50, Gdx.graphics.getHeight() - 50);
 
         handleInput();
         batch.end();
@@ -99,15 +114,12 @@ public class GameScreen implements Screen {
         wheelRenderer.render();
         bettingAreaRenderer.render();
         chipRenderer.render();
+        shopRenderer.render();
 
-        // render chip in hand if value is not null
-        Chip chipInHand = chipRenderer.getCurrentChipInHand();
-        if (chipInHand.getBase() != 0) {
-            Vector3 mousePos = new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0);
-            camera.unproject(mousePos);
-            chipInHand.setPosition(mousePos.x, mousePos.y);
-            chipInHand.render();
-        }
+        // render chip
+        Vector3 mousePos = new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0);
+        camera.unproject(mousePos);
+        chipRenderer.renderChipInHand(mousePos.x, mousePos.y);
     }
 
     @Override
@@ -145,11 +157,6 @@ public class GameScreen implements Screen {
         font.dispose();
     }
 
-    private void updateChips() {
-        balance = totalBalance - betManager.totalAmount();
-        chipRenderer.updateBalance(balance - chipRenderer.getCurrentAmountInHand());
-    }
-
     private void handleInput() {
         if (Gdx.input.justTouched()) {
             Vector3 touchPos = new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0);
@@ -159,60 +166,57 @@ public class GameScreen implements Screen {
                 //wheelRenderer.spinWheelToTarget(0);
                 //wheelRenderer.infiniteBallSpin(300);
                 //wheelRenderer.spinBallToTarget(400, 0);
-                totalBalance -= betManager.totalAmount();
 
                 float selectAngle = MathUtils.random(0f, 360f); // segment at this angle will be selected
                 float targetAngle = MathUtils.random(0f, 360f); // rotation where this segment is going to be at the end
                 float currentAngle = wheelRenderer.getCurrentRotation();
 
-                SegmentAngle s = wheelRenderer.getCurrentSegmentAngle(selectAngle);
-                float center = s.getStartAngle(); // taking the start angle (in base rotation) seems to work very well, dunno why tbh
-                System.out.println("select: " + selectAngle + ", target: " + targetAngle + ", current: " + currentAngle + ", s: " + s.getSegment().getDisplayText());
+                Segment segment = wheelRenderer.getCurrentSegment(selectAngle);
+                float center = wheelRenderer.getCurrentSegmentStartAngle(selectAngle); // taking the start angle (in base rotation) seems to work very well, dunno why tbh
+                System.out.println("select: " + selectAngle + ", target: " + targetAngle + ", current: " + currentAngle + ", s: " + segment.getDisplayText());
 
                 wheelRenderer.spinWheelToTarget(targetAngle - center);
                 wheelRenderer.spinBallToTarget(1000f, targetAngle);
-                wheelRenderer.setBallListener(new WheelAnimator.Listener() {
-                    @Override
-                    public void onSpinEnd() {
-                        totalBalance += betManager.computeReturn(s.getSegment());
-                        if (totalBalance <= 0) {
-                            // dead
-                            game.setScreen(new GameOverScreen(game));
-                        }
-                        betManager.clear();
-                        updateChips();
-                        bettingAreaRenderer.updateBetValues(chipRenderer.getCurrentMagnitude());
+                wheelRenderer.setBallListener(() -> {
+                    gameState.getPlayer().pay(gameState.getBetManager().totalAmount());
+                    gameState.applyReturnOfBets(segment);
+                    if (gameState.getPlayer().isDead()) {
+                        game.setScreen(new GameOverScreen(game));
                     }
+                    chipRenderer.createChips();
+                    bettingAreaRenderer.updateBetValues();
                 });
             }
 
             // TODO probably disable input while wheel is spinning
             if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
-                if (chipRenderer.handleLeftClick(touchPos.x, touchPos.y)) {
-                    updateChips();
+                Optional<Integer> optChipValue = chipRenderer.handleLeftClick(touchPos.x, touchPos.y);
+                if (optChipValue.isPresent()) {
+                    gameState.getPlayer().increaseHandBy(optChipValue.get());
+                    chipRenderer.createChips();
                 } else {
-                    Optional<Bet> optBet = bettingAreaRenderer.handleLeftClick(touchPos.x, touchPos.y, chipRenderer.getCurrentAmountInHand());
+                    Optional<Bet> optBet = bettingAreaRenderer.handleLeftClick(touchPos.x, touchPos.y);
                     optBet.ifPresent(bet -> {
-                        betManager.addBet(bet);
-                        bettingAreaRenderer.updateBetValues(chipRenderer.getCurrentMagnitude());
-                        if (totalBalance - betManager.totalAmount() < chipRenderer.getCurrentAmountInHand()) {
-                           chipRenderer.handleRightClick(); // reset chip in hand
+                        gameState.getBetManager().addBet(bet);
+                        bettingAreaRenderer.updateBetValues();
+                        if (gameState.getBalanceMinusBets() < gameState.getPlayer().getCurrentlyInHand()) {
+                           gameState.getPlayer().resetHand();
                         }
-                        updateChips();
+                        chipRenderer.createChips();
                     });
                 }
             }
 
             if (Gdx.input.isButtonJustPressed(Input.Buttons.RIGHT)) {
-                if (chipRenderer.getCurrentAmountInHand() > 0) {
-                    chipRenderer.handleRightClick();
-                    updateChips();
+                if (gameState.getPlayer().getCurrentlyInHand() > 0) {
+                    gameState.getPlayer().resetHand();
+                    chipRenderer.createChips();
                 } else {
                     Optional<BetType> optBetType = bettingAreaRenderer.handleRightClick(touchPos.x, touchPos.y);
                     optBetType.ifPresent(betType -> {
-                       betManager.removeBet(betType);
-                       bettingAreaRenderer.updateBetValues(chipRenderer.getCurrentMagnitude());
-                       updateChips();
+                       gameState.getBetManager().removeBet(betType);
+                       bettingAreaRenderer.updateBetValues();
+                        chipRenderer.createChips();
                     });
                 }
             }

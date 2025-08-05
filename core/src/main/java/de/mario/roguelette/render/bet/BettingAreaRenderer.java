@@ -5,8 +5,8 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Circle;
 import com.badlogic.gdx.math.Rectangle;
+import de.mario.roguelette.GameState;
 import de.mario.roguelette.betting.*;
-import de.mario.roguelette.util.BetManager;
 import de.mario.roguelette.wheel.Segment;
 
 import java.util.ArrayList;
@@ -21,22 +21,18 @@ public class BettingAreaRenderer {
     private final SpriteBatch batch;
     private final BitmapFont font;
 
+    private final GameState gameState;
+
     private final Rectangle bounds;
 
-    private final BetManager betManager;
-
-    public BettingAreaRenderer(final BetManager betManager, final ShapeRenderer shapeRenderer, final SpriteBatch batch, final BitmapFont font) {
-        this(betManager, shapeRenderer, batch, font, new Rectangle(0, 0, 720, 120));
-    }
-
-    public BettingAreaRenderer(final BetManager betManager, final ShapeRenderer shapeRenderer, final SpriteBatch batch, final BitmapFont font, final Rectangle bounds) {
-        this.betManager = betManager;
+    public BettingAreaRenderer(final ShapeRenderer shapeRenderer, final SpriteBatch batch, final BitmapFont font, final GameState gameState, final Rectangle bounds) {
         this.shapeRenderer = shapeRenderer;
         this.batch = batch;
         this.font = font;
+        this.gameState = gameState;
         this.bounds = bounds;
 
-        updateBetValues(0);
+        updateBetValues();
         buildLayout();
     }
 
@@ -58,65 +54,65 @@ public class BettingAreaRenderer {
         buildVerticalSplitFields();
     }
 
-    public void updateBetValues(int currentMagnitude) {
+    public void updateBetValues() {
         for (BetRegion region : regions) {
             region.deleteChip();
         }
 
         for (BetRegion region : regions) {
-            for (Bet bet : betManager.getBets()) {
+            for (Bet bet : gameState.getBetManager().getBets()) {
                 if (region instanceof NumberRegion && bet.getBetType() instanceof NumberBet) {
                     if (((NumberRegion) region).getNumber() == ((NumberBet) bet.getBetType()).getNumber()) {
-                        createChip(region, bet, currentMagnitude);
+                        createChip(region, bet);
                     }
                 } else if (region instanceof DozenRegion && bet.getBetType() instanceof DozenBet) {
                     if (((DozenRegion) region).getDozen() == ((DozenBet) bet.getBetType()).getDozen()) {
-                        createChip(region, bet, currentMagnitude);
+                        createChip(region, bet);
                     }
                 } else if (region instanceof ColumnRegion && bet.getBetType() instanceof ColumnBet) {
                     if (((ColumnRegion) region).getColumn() == ((ColumnBet) bet.getBetType()).getColumn()) {
-                        createChip(region, bet, currentMagnitude);
+                        createChip(region, bet);
                     }
                 } else if (region instanceof ParityRegion && bet.getBetType() instanceof ParityBet) {
                     if (((ParityRegion) region).isEven() == ((ParityBet) bet.getBetType()).isEven()) {
-                        createChip(region, bet, currentMagnitude);
+                        createChip(region, bet);
                     }
                 } else if (region instanceof ColorRegion && bet.getBetType() instanceof ColorBet) {
                     if (((ColorRegion) region).getSegmentColor() == ((ColorBet) bet.getBetType()).getSegmentColor()) {
-                        createChip(region, bet, currentMagnitude);
+                        createChip(region, bet);
                     }
                 } else if (region instanceof HalfRegion && bet.getBetType() instanceof HalfBet) {
                     if (((HalfRegion) region).isLow() == ((HalfBet) bet.getBetType()).isLow()) {
-                        createChip(region, bet, currentMagnitude);
+                        createChip(region, bet);
                     }
                 } else if (region instanceof StreetRegion && bet.getBetType() instanceof StreetBet) {
                     if (((StreetRegion) region).getStreet() == ((StreetBet) bet.getBetType()).getStreet()) {
-                        createChip(region, bet, currentMagnitude);
+                        createChip(region, bet);
                     }
                 } else if (region instanceof SixLineRegion && bet.getBetType() instanceof SixLineBet) {
                     if (((SixLineRegion) region).getSixLine() == ((SixLineBet) bet.getBetType()).getSixLine()) {
-                        createChip(region, bet, currentMagnitude);
+                        createChip(region, bet);
                     }
                 } else if (region instanceof CornerRegion && bet.getBetType() instanceof CornerBet) {
                     if (((CornerRegion) region).getFirstNumber() == ((CornerBet) bet.getBetType()).getFirstNumber()) {
-                        createChip(region, bet, currentMagnitude);
+                        createChip(region, bet);
                     }
                 } else if (region instanceof HorizontalSplitRegion && bet.getBetType() instanceof HorizontalSplitBet) {
                     if (((HorizontalSplitRegion) region).getFirstNumber() == ((HorizontalSplitBet) bet.getBetType()).getFirstNumber()) {
-                        createChip(region, bet, currentMagnitude);
+                        createChip(region, bet);
                     }
                 } else if (region instanceof VerticalSplitRegion && bet.getBetType() instanceof VerticalSplitBet) {
                     if (((VerticalSplitRegion) region).getFirstNumber() == ((VerticalSplitBet) bet.getBetType()).getFirstNumber()) {
-                        createChip(region, bet, currentMagnitude);
+                        createChip(region, bet);
                     }
                 }
             }
         }
     }
 
-    private void createChip(BetRegion region, Bet bet, int currentMagnitude) {
+    private void createChip(BetRegion region, Bet bet) {
         region.makeChip(bet.getAmount());
-        int b = (int) (region.chip.getValue() / Math.pow(10, currentMagnitude));
+        int b = (int) (region.chip.getValue() / Math.pow(10, gameState.magnitudeAvailableBalance()));
         region.chip.color = region.chip.colorForValue(b);
     }
 
@@ -274,8 +270,8 @@ public class BettingAreaRenderer {
         }
     }
 
-    public Optional<Bet> handleLeftClick(float x, float y, int amount) {
-        if (amount == 0) {
+    public Optional<Bet> handleLeftClick(float x, float y) {
+        if (gameState.getPlayer().getCurrentlyInHand() == 0) {
             return Optional.empty();
         }
 
@@ -284,7 +280,7 @@ public class BettingAreaRenderer {
         while (li.hasPrevious()) {
             BetRegion region = li.previous();
             if (region.contains(x, y)) {
-                return Optional.of(region.createBet(amount));
+                return Optional.of(region.createBet(gameState.getPlayer().getCurrentlyInHand()));
             }
         }
         return Optional.empty();

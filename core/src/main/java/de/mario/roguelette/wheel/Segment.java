@@ -9,7 +9,6 @@ public abstract class Segment {
 
     private SegmentColor color = SegmentColor.NONE;
     private float multiplier = 1f;
-    private boolean isGolden = false;
 
     public Segment() {}
 
@@ -31,14 +30,6 @@ public abstract class Segment {
 
     public void setMultiplier(float multiplier) {
         this.multiplier = multiplier;
-    }
-
-    public boolean isGolden() {
-        return isGolden;
-    }
-
-    public void setGolden(boolean golden) {
-        isGolden = golden;
     }
 
     public abstract String getDisplayText();
