@@ -160,7 +160,7 @@ public class SegmentDraw {
             Matrix4 matrix = new Matrix4().idt()
                 .translate(mulX, mulY, 0)
                 .rotate(0, 0, 1, cAngle)
-                .translate(0, originY, 0);
+                .translate(0, mulLayout.height / 2, 0);
 
             batch.end();
             shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
