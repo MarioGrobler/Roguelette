@@ -12,6 +12,10 @@ public class Wheel {
         this.segments = new ArrayList<>(segments);
     }
 
+    public void addSegment(final Segment segment) {
+        segments.add(segment);
+    }
+
     public Segment getSegmentAt(final int index) {
         return segments.get(index);
     }

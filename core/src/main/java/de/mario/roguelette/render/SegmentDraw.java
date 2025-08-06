@@ -5,10 +5,12 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Circle;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Array;
+import de.mario.roguelette.util.MathHelper;
 import de.mario.roguelette.wheel.Segment;
 
 public class SegmentDraw {
@@ -23,6 +25,7 @@ public class SegmentDraw {
     float sweepAngle;
     float outerRadius;
     float innerRadius;
+    float rotation;
     Color color;
 
     private Color getDrawingColorFromSegment(final Segment segment) {
@@ -38,7 +41,7 @@ public class SegmentDraw {
             case NONE:
                 return Color.FOREST;
             case BOTH: //TODO: a more complex pattern here
-                return new Color(128, 0, 0, 1);
+                return new Color(0.4f, 0f, 0f, 1);
             default: // should be unreachable
                 return Color.PINK;
         }
@@ -57,7 +60,7 @@ public class SegmentDraw {
         this.innerRadius = innerRadius;
     }
 
-    private void drawDonutSlice(float rotationAngle) {
+    private void drawDonutSlice() {
         int segments = Math.max(6, (int)(sweepAngle / 4f)); // smoothness
 
         float angleStep = sweepAngle / segments;
@@ -65,7 +68,7 @@ public class SegmentDraw {
         // outer arc
         Array<Vector2> outerPoints = new Array<>();
         for (int i = 0; i <= segments; i++) {
-            float angle = startAngle + i * angleStep + rotationAngle;
+            float angle = startAngle + i * angleStep + rotation;
             outerPoints.add(new Vector2(
                 centerX + MathUtils.cosDeg(angle) * outerRadius,
                 centerY + MathUtils.sinDeg(angle) * outerRadius
@@ -75,7 +78,7 @@ public class SegmentDraw {
         // inner arc
         Array<Vector2> innerPoints = new Array<>();
         for (int i = segments; i >= 0; i--) {
-            float angle = startAngle + i * angleStep + rotationAngle;
+            float angle = startAngle + i * angleStep + rotation;
             innerPoints.add(new Vector2(
                 centerX + MathUtils.cosDeg(angle) * innerRadius,
                 centerY + MathUtils.sinDeg(angle) * innerRadius
@@ -97,18 +100,18 @@ public class SegmentDraw {
         }
     }
 
-    public void render(float rotationAngle) {
+    public void render() {
         // draw slice
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         shapeRenderer.setColor(color);
-        drawDonutSlice(rotationAngle);
+        drawDonutSlice();
         shapeRenderer.end();
 
         // draw texts
         batch.begin();
         font.getData().setScale(1.5f);
 
-        float cAngle = startAngle + 0.5f * sweepAngle + rotationAngle;
+        float cAngle = startAngle + 0.5f * sweepAngle + rotation;
         float textRadius = outerRadius * .9f;
 
         float x = centerX + MathUtils.cosDeg(cAngle) * textRadius;
@@ -177,5 +180,44 @@ public class SegmentDraw {
 
     public float getEndAngle() {
         return startAngle + sweepAngle;
+    }
+
+    public float getOuterRadius() {
+        return outerRadius;
+    }
+
+    public void setOuterRadius(float outerRadius) {
+        this.outerRadius = outerRadius;
+    }
+
+    public float getInnerRadius() {
+        return innerRadius;
+    }
+
+    public void setInnerRadius(float innerRadius) {
+        this.innerRadius = innerRadius;
+    }
+
+    public float getRotation() {
+        return rotation;
+    }
+
+    public void setRotation(float rotation) {
+        this.rotation = rotation;
+    }
+
+    public boolean angleInArc(float angle) {
+        float norm = MathHelper.normalizeAngle(angle - startAngle - rotation);
+        return norm <= sweepAngle;
+    }
+
+    public boolean contains(float x, float y) {
+        Circle outerCircle = new Circle(centerX, centerY, outerRadius);
+        Circle innerCircle = new Circle(centerX, centerY, innerRadius);
+        if (outerCircle.contains(x, y) && !innerCircle.contains(x, y)) {
+            float angle = MathUtils.atan2Deg360(y - centerY, x - centerX);
+            return angleInArc(angle);
+        }
+        return false;
     }
 }

@@ -61,7 +61,7 @@ public class ChipRenderer {
 
         float minX = bounds.x + chipRadius;
         float maxX = bounds.x + bounds.width - chipRadius;
-        float step = (maxX - minX) / (bases.length - 1);
+        float step = (bases.length < 2) ? 0f : (maxX - minX) / (bases.length - 1);
         for (int i = 0; i < bases.length; i++) {
             float x = minX + i * step;
             Chip chip = new Chip(new Circle(x, bounds.y, chipRadius), bases[i], gameState.magnitudeAvailableBalance(), shapeRenderer, batch, font);

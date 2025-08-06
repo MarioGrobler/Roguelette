@@ -1,6 +1,8 @@
 package de.mario.roguelette.animator;
 
 
+import de.mario.roguelette.util.MathHelper;
+
 public class WheelAnimator {
 
     public interface Listener {
@@ -51,7 +53,7 @@ public class WheelAnimator {
             }
         }
 
-        rotationAngle = normalizeAngle(rotationAngle + currentSpeed * delta);
+        rotationAngle = MathHelper.normalizeAngle(rotationAngle + currentSpeed * delta);
     }
 
     /**
@@ -89,7 +91,7 @@ public class WheelAnimator {
 
         //angle we need to spin before hitting the break
         float stopDistance = (currentSpeed * currentSpeed) / (2f * Math.abs(deceleration));
-        triggerAngle = normalizeAngle(targetAngle - stopDistance);
+        triggerAngle = MathHelper.normalizeAngle(targetAngle - stopDistance);
     }
 
     public float getRotationAngle() {
@@ -104,10 +106,4 @@ public class WheelAnimator {
         this.listener = listener;
     }
 
-
-    public float normalizeAngle(float angle) {
-        angle %= 360f;
-        if (angle < 0f) angle += 360f;
-        return angle;
-    }
 }

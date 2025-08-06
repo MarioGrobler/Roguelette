@@ -12,6 +12,7 @@ import de.mario.roguelette.GameState;
 import de.mario.roguelette.animator.BallAnimator;
 import de.mario.roguelette.animator.WheelAnimator;
 import de.mario.roguelette.render.SegmentDraw;
+import de.mario.roguelette.util.MathHelper;
 import de.mario.roguelette.wheel.Segment;
 
 import java.util.ArrayList;
@@ -82,7 +83,7 @@ public class WheelRenderer {
      * @param angle the angle in degree (0 - 360)
      */
     public Segment getCurrentSegment(float angle) {
-        float actualAngle = wheelAnimator.normalizeAngle(angle - wheelAnimator.getRotationAngle());
+        float actualAngle = MathHelper.normalizeAngle(angle - wheelAnimator.getRotationAngle());
         for (SegmentDraw sd : segmentDraws) {
             if (actualAngle >= sd.getStartAngle() && actualAngle < sd.getEndAngle()) {
                 return sd.getSegment();
@@ -93,7 +94,7 @@ public class WheelRenderer {
     }
 
     public float getCurrentSegmentStartAngle(float angle) {
-        float actualAngle = wheelAnimator.normalizeAngle(angle - wheelAnimator.getRotationAngle());
+        float actualAngle = MathHelper.normalizeAngle(angle - wheelAnimator.getRotationAngle());
         for (SegmentDraw sd : segmentDraws) {
             if (actualAngle >= sd.getStartAngle() && actualAngle < sd.getEndAngle()) {
                 return sd.getStartAngle();
@@ -127,7 +128,8 @@ public class WheelRenderer {
 
         // render segments
         for (SegmentDraw sd : segmentDraws) {
-            sd.render(rotationAngle);
+            sd.setRotation(rotationAngle);
+            sd.render();
         }
 
         // render lines between segments

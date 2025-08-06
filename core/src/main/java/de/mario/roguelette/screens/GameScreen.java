@@ -15,9 +15,10 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import de.mario.roguelette.GameState;
 import de.mario.roguelette.Player;
 import de.mario.roguelette.RougeletteGame;
-import de.mario.roguelette.animator.WheelAnimator;
 import de.mario.roguelette.betting.Bet;
 import de.mario.roguelette.betting.BetType;
+import de.mario.roguelette.items.Shop;
+import de.mario.roguelette.items.ShopItem;
 import de.mario.roguelette.render.bet.BettingAreaRenderer;
 import de.mario.roguelette.render.bet.ChipRenderer;
 import de.mario.roguelette.render.shop.ShopRenderer;
@@ -30,6 +31,9 @@ import de.mario.roguelette.wheel.WheelFactory;
 import java.util.Optional;
 
 public class GameScreen implements Screen {
+
+    private static final float MIN_SEGMENTS = 12;
+    private static final float MAX_SEGMENTS = 60;
 
     private final RougeletteGame game;
 
@@ -52,10 +56,11 @@ public class GameScreen implements Screen {
 
     @Override
     public void show() {
-        Player player = new Player(1000000, "Yannik");
+        Player player = new Player(100, "Yannik");
         Wheel wheel = WheelFactory.createClassicWheel();
         BetManager betManager = new BetManager();
-        gameState = new GameState(player, wheel, betManager);
+        Shop shop = new Shop();
+        gameState = new GameState(player, wheel, betManager, shop);
 
         camera = new OrthographicCamera();
         camera.setToOrtho(false, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
@@ -89,7 +94,7 @@ public class GameScreen implements Screen {
         float shopStartY = 20f;
         float shopWidth = betWidth;
         float shopHeight = Gdx.graphics.getHeight() / 2f;
-        shopRenderer = new ShopRenderer(shapeRenderer, batch, font, new Rectangle(shopStartX, shopStartY, shopWidth, shopHeight));
+        shopRenderer = new ShopRenderer(shapeRenderer, batch, font, gameState, new Rectangle(shopStartX, shopStartY, shopWidth, shopHeight));
     }
 
     @Override
@@ -191,20 +196,30 @@ public class GameScreen implements Screen {
             // TODO probably disable input while wheel is spinning
             if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
                 Optional<Integer> optChipValue = chipRenderer.handleLeftClick(touchPos.x, touchPos.y);
-                if (optChipValue.isPresent()) {
-                    gameState.getPlayer().increaseHandBy(optChipValue.get());
+                optChipValue.ifPresent(value -> {
+                    gameState.getPlayer().increaseHandBy(value);
                     chipRenderer.createChips();
-                } else {
-                    Optional<Bet> optBet = bettingAreaRenderer.handleLeftClick(touchPos.x, touchPos.y);
-                    optBet.ifPresent(bet -> {
-                        gameState.getBetManager().addBet(bet);
-                        bettingAreaRenderer.updateBetValues();
-                        if (gameState.getBalanceMinusBets() < gameState.getPlayer().getCurrentlyInHand()) {
-                           gameState.getPlayer().resetHand();
-                        }
-                        chipRenderer.createChips();
-                    });
-                }
+                });
+
+                Optional<Bet> optBet = bettingAreaRenderer.handleLeftClick(touchPos.x, touchPos.y);
+                optBet.ifPresent(bet -> {
+                    gameState.getBetManager().addBet(bet);
+                    bettingAreaRenderer.updateBetValues();
+                    if (gameState.getBalanceMinusBets() < gameState.getPlayer().getCurrentlyInHand()) {
+                        gameState.getPlayer().resetHand();
+                    }
+                    chipRenderer.createChips();
+                });
+
+                Optional<ShopItem> optShopItem = shopRenderer.handleLeftClick(touchPos.x, touchPos.y);
+                optShopItem.ifPresent(shopItem -> {
+                   if (gameState.getWheel().size() < MAX_SEGMENTS) {
+                       shopItem.tryBuy(gameState);
+                       wheelRenderer.updateWheel();
+                       chipRenderer.createChips();
+                   }
+                });
+
             }
 
             if (Gdx.input.isButtonJustPressed(Input.Buttons.RIGHT)) {

@@ -1,5 +1,6 @@
 package de.mario.roguelette;
 
+import de.mario.roguelette.items.Shop;
 import de.mario.roguelette.util.BetManager;
 import de.mario.roguelette.util.MathHelper;
 import de.mario.roguelette.wheel.Segment;
@@ -9,11 +10,13 @@ public class GameState {
     private final Player player;
     private final Wheel wheel;
     private final BetManager betManager;
+    private final Shop shop;
 
-    public GameState(Player player, Wheel wheel, BetManager betManager) {
+    public GameState(final Player player, final Wheel wheel, final BetManager betManager, final Shop shop) {
         this.player = player;
         this.wheel = wheel;
         this.betManager = betManager;
+        this.shop = shop;
     }
 
     public Player getPlayer() {
@@ -26,6 +29,10 @@ public class GameState {
 
     public BetManager getBetManager() {
         return betManager;
+    }
+
+    public Shop getShop() {
+        return shop;
     }
 
     /**
