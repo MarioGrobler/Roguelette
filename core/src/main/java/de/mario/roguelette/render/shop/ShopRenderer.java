@@ -2,9 +2,12 @@ package de.mario.roguelette.render.shop;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.utils.Align;
 import de.mario.roguelette.GameState;
 import de.mario.roguelette.items.ShopItem;
 import de.mario.roguelette.items.segments.AddSegmentShopItem;
@@ -101,16 +104,35 @@ public class ShopRenderer {
         shapeRenderer.end();
 
         // items
-        float x = bounds.x + bounds.width * 8/9f;
         for (int i = 0; i < gameState.getShop().getSegments().size(); i++) {
             SegmentDraw sd = segmentDraws.get(i);
             sd.render();
+
+            // render price
+            ShopItem item = gameState.getShop().getSegments().get(i);
             float y = sd.getCenterY() + (sd.getOuterRadius() + sd.getInnerRadius()) / 2f;
             batch.begin();
-            batch.setTransformMatrix(batch.getTransformMatrix().idt());
-            font.getData().setScale(2f);
-            font.draw(batch, "$" + gameState.getShop().getSegments().get(i).getCost(), x, y);
+            if (item.isSold()) {
+                float x = bounds.x + bounds.width * 5/6f;
+                font.getData().setScale(4f);
+                GlyphLayout layout = new GlyphLayout(font, "SOLD", Color.WHITE, 0, Align.center, false);
+                y += layout.height / 2f;
+
+                // rotate the text a bit
+                batch.setTransformMatrix(batch.getTransformMatrix().idt()
+                    .translate(x, y, 0)
+                    .rotate(0, 0, 1, 10)
+                );
+                font.draw(batch, layout, 0, 0);
+                batch.setTransformMatrix(new Matrix4()); // reset
+            } else {
+                // if the item is still available, render the price
+                float x = bounds.x + bounds.width * 8/9f;
+                font.getData().setScale(2f);
+                font.draw(batch, "$" + item.getCost(), x, y);
+            }
             batch.end();
+
         }
     }
 

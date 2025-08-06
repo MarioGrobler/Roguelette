@@ -1,5 +1,7 @@
 package de.mario.roguelette.wheel;
 
+import com.badlogic.gdx.math.MathUtils;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -14,6 +16,11 @@ public class Wheel {
 
     public void addSegment(final Segment segment) {
         segments.add(segment);
+    }
+
+    public void addSegmentRandom(final Segment segment) {
+        int pos = MathUtils.random(0, segments.size());
+        segments.add(pos, segment);
     }
 
     public Segment getSegmentAt(final int index) {

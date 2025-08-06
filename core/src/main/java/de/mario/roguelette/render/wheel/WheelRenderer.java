@@ -41,7 +41,7 @@ public class WheelRenderer {
 
 
     private SegmentDraw createSegmentDraw(final Segment segment, float startAngle) {
-        SegmentDraw sd = new SegmentDraw(segment, shapeRenderer, batch, font, centerX, centerY, wheelRadius, 0f);
+        SegmentDraw sd = new SegmentDraw(segment, shapeRenderer, batch, font, centerX, centerY, wheelRadius, innerRadius*.99f);
         sd.setStartAngle(startAngle);
         sd.setSweepAngle(anglePerSegment);
         return sd;

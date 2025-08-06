@@ -47,6 +47,13 @@ public class GameState {
     }
 
     /**
+     * @return true if at least one bet is placed; false otherwise
+     */
+    public boolean betsNotEmpty() {
+        return !betManager.getBets().isEmpty();
+    }
+
+    /**
      * Computes the return of the bets for the current segment. Clears the bets afterwards.
      */
     public void applyReturnOfBets(final Segment segment) {

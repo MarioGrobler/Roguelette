@@ -9,7 +9,6 @@ import de.mario.roguelette.wheel.Segment;
 public class AddSegmentShopItem extends SegmentShopItem {
 
     private final Segment segment;
-    private final int cost;
 
     public AddSegmentShopItem(Segment segment, int cost) {
         this.segment = segment;
@@ -48,13 +47,8 @@ public class AddSegmentShopItem extends SegmentShopItem {
     }
 
     @Override
-    public int getCost() {
-        return cost;
-    }
-
-    @Override
     protected void onBuy(final GameState gameState) {
-        gameState.getWheel().addSegment(segment);
+        gameState.getWheel().addSegmentRandom(segment);
     }
 
     public Segment getSegment() {

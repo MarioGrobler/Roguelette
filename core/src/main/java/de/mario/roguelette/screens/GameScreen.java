@@ -167,10 +167,9 @@ public class GameScreen implements Screen {
             Vector3 touchPos = new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0);
             camera.unproject(touchPos);
 
-            if (wheelRenderer.contains(touchPos.x, touchPos.y) && !wheelRenderer.isSpinning()) {
-                //wheelRenderer.spinWheelToTarget(0);
-                //wheelRenderer.infiniteBallSpin(300);
-                //wheelRenderer.spinBallToTarget(400, 0);
+            if (wheelRenderer.contains(touchPos.x, touchPos.y)
+                && gameState.betsNotEmpty()
+                && !wheelRenderer.isSpinning()) {
 
                 float selectAngle = MathUtils.random(0f, 360f); // segment at this angle will be selected
                 float targetAngle = MathUtils.random(0f, 360f); // rotation where this segment is going to be at the end
@@ -190,6 +189,10 @@ public class GameScreen implements Screen {
                     }
                     chipRenderer.createChips();
                     bettingAreaRenderer.updateBetValues();
+
+                    // also reset shop (?)
+                    gameState.getShop().refreshItems();
+                    shopRenderer.updateItems();
                 });
             }
 
@@ -214,9 +217,10 @@ public class GameScreen implements Screen {
                 Optional<ShopItem> optShopItem = shopRenderer.handleLeftClick(touchPos.x, touchPos.y);
                 optShopItem.ifPresent(shopItem -> {
                    if (gameState.getWheel().size() < MAX_SEGMENTS) {
-                       shopItem.tryBuy(gameState);
-                       wheelRenderer.updateWheel();
-                       chipRenderer.createChips();
+                       if (shopItem.tryBuy(gameState)) {
+                           wheelRenderer.updateWheel();
+                           chipRenderer.createChips();
+                       }
                    }
                 });
 

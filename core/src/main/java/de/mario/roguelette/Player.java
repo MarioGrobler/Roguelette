@@ -39,7 +39,8 @@ public class Player {
     }
 
     public boolean canAfford(int amount) {
-        return this.balance >= amount;
+        // strictly greater as a balance of 0 means game over
+        return this.balance > amount;
     }
 
     public boolean isDead() {

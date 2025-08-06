@@ -7,17 +7,22 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Circle;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Array;
 import de.mario.roguelette.util.MathHelper;
 import de.mario.roguelette.wheel.Segment;
 
+import java.text.DecimalFormat;
+
 public class SegmentDraw {
     private final ShapeRenderer shapeRenderer;
     private final SpriteBatch batch;
     private final BitmapFont font;
     private final Segment segment;
+
+    private final DecimalFormat df = new DecimalFormat("0.#");
 
     float centerX;
     float centerY;
@@ -112,7 +117,7 @@ public class SegmentDraw {
         font.getData().setScale(1.5f);
 
         float cAngle = startAngle + 0.5f * sweepAngle + rotation;
-        float textRadius = outerRadius * .9f;
+        float textRadius = outerRadius * .95f;
 
         float x = centerX + MathUtils.cosDeg(cAngle) * textRadius;
         float y = centerY + MathUtils.sinDeg(cAngle) * textRadius;
@@ -127,10 +132,49 @@ public class SegmentDraw {
         batch.setTransformMatrix(batch.getTransformMatrix().idt()
             .translate(x,y,0)
             .rotate(0,0,1, cAngle)
-            .translate(originX, originY,0)
+            .translate(0, originY,0)
         );
 
         font.draw(batch, layout, 0, 0);
+
+        // draw multiplier if it is not the identity
+        if (segment.getMultiplier() != 1f) {
+            // add a golden shimmer (maybe later)
+//            Gdx.gl.glEnable(GL20.GL_BLEND);
+//            Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+//            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+//            shapeRenderer.setColor(1, 1, 0, 0.3f);
+//            shapeRenderer.arc(centerX, centerY, outerRadius, startAngle + rotation, sweepAngle);
+//            shapeRenderer.end();
+//            Gdx.gl.glDisable(GL20.GL_BLEND);
+
+
+            float mulRadius = innerRadius + (outerRadius - innerRadius) * 0.2f;
+            float mulX = centerX + MathUtils.cosDeg(cAngle) * mulRadius;
+            float mulY = centerY + MathUtils.sinDeg(cAngle) * mulRadius;
+            font.getData().setScale(1.2f);
+            GlyphLayout mulLayout = new GlyphLayout(font, df.format(segment.getMultiplier()) + "x", Color.BLACK, 0, Align.left, false);
+
+            float padding = 6f;
+
+            Matrix4 matrix = new Matrix4().idt()
+                .translate(mulX, mulY, 0)
+                .rotate(0, 0, 1, cAngle)
+                .translate(0, originY, 0);
+
+            batch.end();
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+            shapeRenderer.setTransformMatrix(matrix);
+            shapeRenderer.setColor(Color.GOLDENROD);
+            shapeRenderer.rect(-padding, -mulLayout.height - padding, mulLayout.width + 2 * padding, mulLayout.height + 2 * padding);
+            shapeRenderer.setTransformMatrix(shapeRenderer.getTransformMatrix().idt()); // reset matrix
+            shapeRenderer.end();
+
+            batch.begin();
+            batch.setTransformMatrix(matrix);
+            font.draw(batch, mulLayout, 0, 0);
+            batch.setTransformMatrix(batch.getTransformMatrix().idt()); // also reset matrix
+        }
         batch.end();
     }
 

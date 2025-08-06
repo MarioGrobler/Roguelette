@@ -12,6 +12,7 @@ import de.mario.roguelette.wheel.Segment;
 import java.util.ArrayList;
 import java.util.List;
 
+//TODO
 public class RandomItemGenerator {
     public List<ChanceShopItem> generateChances() {
         return new ArrayList<>();
@@ -32,6 +33,7 @@ public class RandomItemGenerator {
         segments.add(new AddSegmentShopItem(rs, 10));
 
         JokerColorSegment js = new JokerColorSegment(Segment.SegmentColor.RED);
+        js.setMultiplier(1.5f);
         segments.add(new AddSegmentShopItem(js, 12));
 
         return segments;
