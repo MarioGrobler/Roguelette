@@ -98,10 +98,6 @@ public class WheelAnimator {
         return clockwise ? 360f - rotationAngle : rotationAngle;
     }
 
-    public boolean isSpinning() {
-        return spinning;
-    }
-
     public void setListener(Listener listener) {
         this.listener = listener;
     }

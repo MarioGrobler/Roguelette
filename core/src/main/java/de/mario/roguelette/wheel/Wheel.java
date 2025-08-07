@@ -43,4 +43,8 @@ public class Wheel {
         segments.clear();
         segments.addAll(newSegments);
     }
+
+    public void removeSegmentAt(int index) {
+        segments.remove(index);
+    }
 }

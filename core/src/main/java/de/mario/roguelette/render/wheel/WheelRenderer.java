@@ -11,7 +11,7 @@ import com.badlogic.gdx.math.MathUtils;
 import de.mario.roguelette.GameState;
 import de.mario.roguelette.animator.BallAnimator;
 import de.mario.roguelette.animator.WheelAnimator;
-import de.mario.roguelette.render.SegmentDraw;
+import de.mario.roguelette.render.segment.SegmentDraw;
 import de.mario.roguelette.util.MathHelper;
 import de.mario.roguelette.wheel.Segment;
 
@@ -91,6 +91,17 @@ public class WheelRenderer {
         }
         //360°
         return segmentDraws.get(0).getSegment();
+    }
+
+    public int getCurrentSegmentIndex(float angle) {
+        float actualAngle = MathHelper.normalizeAngle(angle - wheelAnimator.getRotationAngle());
+        for (int i = 0; i < segmentDraws.size(); i++) {
+            SegmentDraw sd = segmentDraws.get(i);
+            if (actualAngle >= sd.getStartAngle() && actualAngle < sd.getEndAngle()) {
+                return i;
+            }
+        }
+        return 0;
     }
 
     public float getCurrentSegmentStartAngle(float angle) {
@@ -279,10 +290,6 @@ public class WheelRenderer {
         this.centerY = centerY;
     }
 
-    public boolean isSpinning() {
-        return wheelAnimator.isSpinning();
-    }
-
     public void setWheelListener(final WheelAnimator.Listener wheelListener) {
         wheelAnimator.setListener(wheelListener);
     }
@@ -301,6 +308,16 @@ public class WheelRenderer {
         if (wheelCircle.contains(x, y) && !innerCircle.contains(x, y)) {
             float angle = MathUtils.atan2Deg360(y - centerY, x - centerX);
             return Optional.of(getCurrentSegment(angle));
+        }
+        return Optional.empty();
+    }
+
+    public Optional<Integer> getSegmentIndexAt(float x, float y) {
+        Circle wheelCircle = new Circle(centerX, centerY, wheelRadius);
+        Circle innerCircle = new Circle(centerX, centerY, innerRadius);
+        if (wheelCircle.contains(x, y) && !innerCircle.contains(x, y)) {
+            float angle = MathUtils.atan2Deg360(y - centerY, x - centerX);
+            return Optional.of(getCurrentSegmentIndex(angle));
         }
         return Optional.empty();
     }

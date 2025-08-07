@@ -12,7 +12,9 @@ import de.mario.roguelette.GameState;
 import de.mario.roguelette.items.ShopItem;
 import de.mario.roguelette.items.segments.AddSegmentShopItem;
 import de.mario.roguelette.items.segments.SegmentShopItem;
-import de.mario.roguelette.render.SegmentDraw;
+import de.mario.roguelette.render.segment.SegmentDeleteDraw;
+import de.mario.roguelette.render.segment.SegmentDraw;
+import de.mario.roguelette.render.segment.SegmentDrawBase;
 import de.mario.roguelette.util.ColorHelper;
 import de.mario.roguelette.wheel.Segment;
 
@@ -31,7 +33,7 @@ public class ShopRenderer {
     private final Color color = new Color(0.5f, 0.35f, 0.2f, 1);
     private final float thickness = 5f;
 
-    private final List<SegmentDraw> segmentDraws = new ArrayList<>();
+    private final List<SegmentDrawBase> segmentDraws = new ArrayList<>();
 
     public ShopRenderer(final ShapeRenderer shapeRenderer, final SpriteBatch batch, final BitmapFont font, final GameState gameState, final Rectangle bounds) {
         this.shapeRenderer = shapeRenderer;
@@ -73,16 +75,17 @@ public class ShopRenderer {
         for (int i = 0; i < gameState.getShop().getSegments().size(); i++) {
             float y = yMin + i * step;
             SegmentShopItem item = gameState.getShop().getSegments().get(i);
+            SegmentDrawBase sd;
             if (item instanceof AddSegmentShopItem) {
                Segment s = ((AddSegmentShopItem) item).getSegment();
-               SegmentDraw sd = new SegmentDraw(s, shapeRenderer, batch, font, x, y, outerRadius, innerRadius);
-               sd.setStartAngle(-10);
-               sd.setSweepAngle(20);
-               sd.setRotation(90);
-               segmentDraws.add(sd);
-            } else {
-                // TODO...
+               sd = new SegmentDraw(s, shapeRenderer, batch, font, x, y, outerRadius, innerRadius);
+            } else { // DeleteSegmentShopItem
+                sd = new SegmentDeleteDraw(shapeRenderer, batch, font, x, y, outerRadius, innerRadius);
             }
+            sd.setStartAngle(-10);
+            sd.setSweepAngle(20);
+            sd.setRotation(90);
+            segmentDraws.add(sd);
         }
     }
 
@@ -105,8 +108,9 @@ public class ShopRenderer {
 
         // items
         for (int i = 0; i < gameState.getShop().getSegments().size(); i++) {
-            SegmentDraw sd = segmentDraws.get(i);
+            SegmentDrawBase sd = segmentDraws.get(i);
             sd.render();
+            sd.renderOutline(Color.WHITE);
 
             // render price
             ShopItem item = gameState.getShop().getSegments().get(i);

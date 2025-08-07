@@ -14,6 +14,8 @@ public class Shop {
 
     private final RandomItemGenerator randomItemGenerator = new RandomItemGenerator();
 
+    private int numOfSoldDeletes = 0;
+
     public Shop() {
         refreshItems();
     }
@@ -21,7 +23,7 @@ public class Shop {
     public void refreshItems() {
         this.chances = randomItemGenerator.generateChances();
         this.fortunes = randomItemGenerator.generateFortunes();
-        this.segments = randomItemGenerator.generateSegments();
+        this.segments = randomItemGenerator.generateSegments(1 << numOfSoldDeletes);
     }
 
     public List<ChanceShopItem> getChances() {
@@ -34,6 +36,14 @@ public class Shop {
 
     public List<SegmentShopItem> getSegments() {
         return Collections.unmodifiableList(segments);
+    }
+
+    public int getNumOfSoldDeletes() {
+        return numOfSoldDeletes;
+    }
+
+    public void increaseNumOfSoldDeletes() {
+        numOfSoldDeletes++;
     }
 
 }

@@ -1,6 +1,7 @@
 package de.mario.roguelette;
 
 import de.mario.roguelette.items.Shop;
+import de.mario.roguelette.items.segments.DeleteSegmentShopItem;
 import de.mario.roguelette.util.BetManager;
 import de.mario.roguelette.util.MathHelper;
 import de.mario.roguelette.wheel.Segment;
@@ -12,11 +13,22 @@ public class GameState {
     private final BetManager betManager;
     private final Shop shop;
 
+    private GameStateMode mode;
+    private DeleteSegmentShopItem pendingDeleteItem = null;
+
+    public enum GameStateMode {
+        DEFAULT,
+        SPINNING,
+        DELETE_SEGMENT_SELECTING
+    }
+
     public GameState(final Player player, final Wheel wheel, final BetManager betManager, final Shop shop) {
         this.player = player;
         this.wheel = wheel;
         this.betManager = betManager;
         this.shop = shop;
+
+        this.mode = GameStateMode.DEFAULT;
     }
 
     public Player getPlayer() {
@@ -33,6 +45,22 @@ public class GameState {
 
     public Shop getShop() {
         return shop;
+    }
+
+    public DeleteSegmentShopItem getPendingDeleteItem() {
+        return pendingDeleteItem;
+    }
+
+    public void setPendingDeleteItem(DeleteSegmentShopItem pendingDeleteItem) {
+        this.pendingDeleteItem = pendingDeleteItem;
+    }
+
+    public GameStateMode getMode() {
+        return mode;
+    }
+
+    public void setMode(GameStateMode mode) {
+        this.mode = mode;
     }
 
     /**

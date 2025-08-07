@@ -3,8 +3,8 @@ package de.mario.roguelette.items;
 import de.mario.roguelette.items.chances.ChanceShopItem;
 import de.mario.roguelette.items.fortunes.FortuneShopItem;
 import de.mario.roguelette.items.segments.AddSegmentShopItem;
+import de.mario.roguelette.items.segments.DeleteSegmentShopItem;
 import de.mario.roguelette.items.segments.SegmentShopItem;
-import de.mario.roguelette.wheel.JokerColorSegment;
 import de.mario.roguelette.wheel.JokerNumberRangeSegment;
 import de.mario.roguelette.wheel.NumberSegment;
 import de.mario.roguelette.wheel.Segment;
@@ -22,7 +22,7 @@ public class RandomItemGenerator {
         return new ArrayList<>();
     }
 
-    public List<SegmentShopItem> generateSegments() {
+    public List<SegmentShopItem> generateSegments(int deleteSegmentPrice) {
         List<SegmentShopItem> segments = new ArrayList<>();
         NumberSegment ns = new NumberSegment(1, Segment.SegmentColor.BLACK);
         ns.setMultiplier(2f);
@@ -32,9 +32,7 @@ public class RandomItemGenerator {
         rs.setMultiplier(3f);
         segments.add(new AddSegmentShopItem(rs, 10));
 
-        JokerColorSegment js = new JokerColorSegment(Segment.SegmentColor.RED);
-        js.setMultiplier(1.5f);
-        segments.add(new AddSegmentShopItem(js, 12));
+        segments.add(new DeleteSegmentShopItem(deleteSegmentPrice));
 
         return segments;
     }
