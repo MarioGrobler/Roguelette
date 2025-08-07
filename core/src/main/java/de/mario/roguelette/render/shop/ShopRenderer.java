@@ -1,6 +1,8 @@
 package de.mario.roguelette.render.shop;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -60,6 +62,52 @@ public class ShopRenderer {
         shapeRenderer.circle(rect.x + rect.width - radius, rect.y + radius, radius);
         shapeRenderer.circle(rect.x + radius, rect.y + rect.height - radius, radius);
         shapeRenderer.circle(rect.x + rect.width - radius, rect.y + rect.height - radius, radius);
+    }
+
+    private void drawTooltip(final ShopItem item, float x, float y) {
+        String title = item.getShortDescription();
+        String description = item.getDescription();
+
+        // for automatic line breaks
+        float maxWidth = bounds.width / 3f;
+
+        // header
+        font.getData().setScale(1.25f);
+        GlyphLayout layoutHeader = new GlyphLayout(font, title, Color.WHITE, maxWidth, Align.left, true);
+
+        // footer
+        font.getData().setScale(1f);
+        GlyphLayout layoutDescription = new GlyphLayout(font, description, Color.WHITE, maxWidth, Align.left, true);
+
+        float padding = 8;
+        float tooltipWidth = Math.max(layoutHeader.width, layoutDescription.width) + padding * 2;
+        float tooltipHeight = layoutHeader.height + layoutDescription.height + padding * 4;
+
+
+        // black background with a bit of transparency
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(new Color(0, 0, 0, 0.85f));
+        shapeRenderer.rect(x, y, tooltipWidth, tooltipHeight);
+        shapeRenderer.end();
+        Gdx.gl.glDisable(GL20.GL_BLEND);
+
+        // white border + white split line
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+        shapeRenderer.setColor(Color.WHITE);
+        shapeRenderer.rect(x, y, tooltipWidth, tooltipHeight);
+        shapeRenderer.line(x, y + layoutDescription.height + 2*padding, x + tooltipWidth, y + layoutDescription.height + 2*padding);
+        shapeRenderer.end();
+
+        // text
+        batch.begin();
+        font.setColor(Color.WHITE);
+        font.getData().setScale(1.25f);
+        font.draw(batch, layoutHeader, x + padding, y + tooltipHeight - padding);
+        font.getData().setScale(1f);
+        font.draw(batch, layoutDescription, x + padding, y + tooltipHeight - layoutHeader.height - 3*padding);
+        batch.end();
     }
 
 
@@ -140,7 +188,15 @@ public class ShopRenderer {
         }
     }
 
-    public Optional<ShopItem> handleLeftClick(float x, float y) {
+    public boolean contains(float x, float y) {
+        return bounds.contains(x, y);
+    }
+
+    private Optional<ShopItem> findShopItem(float x, float y) {
+        if (!contains(x, y)) {
+            return Optional.empty();
+        }
+
         for (int i = 0; i < segmentDraws.size(); i++) {
             //TODO this is really not elegant
             if (segmentDraws.get(i).contains(x, y)) {
@@ -148,6 +204,14 @@ public class ShopRenderer {
             }
         }
         return Optional.empty();
+    }
+
+    public void handleHover(float x, float y) {
+        findShopItem(x, y).ifPresent(shopItem -> drawTooltip(shopItem, x, y));
+    }
+
+    public Optional<ShopItem> handleLeftClick(float x, float y) {
+        return findShopItem(x, y);
     }
 
 

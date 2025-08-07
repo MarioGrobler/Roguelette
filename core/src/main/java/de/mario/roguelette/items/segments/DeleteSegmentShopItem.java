@@ -10,12 +10,12 @@ public class DeleteSegmentShopItem extends SegmentShopItem {
 
     @Override
     public String getShortDescription() {
-        return "Deletes a segment of the wheel";
+        return "Segment Remover";
     }
 
     @Override
     public String getDescription() {
-        return "";
+        return "Left click on a segment on the wheel to remove it. Right click to cancel";
     }
 
 

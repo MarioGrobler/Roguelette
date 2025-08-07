@@ -107,22 +107,10 @@ public class GameScreen implements Screen {
         shapeRenderer.setProjectionMatrix(camera.combined);
         batch.setProjectionMatrix(camera.combined);
 
-        // draw current balance
-        batch.begin();
-        font.setColor(Color.WHITE);
-        font.getData().setScale(3f);
-        font.draw(batch, "$" + gameState.getBalanceMinusBets(), 50, Gdx.graphics.getHeight() - 50);
-
-        if (gameState.getMode() == GameState.GameStateMode.DELETE_SEGMENT_SELECTING) {
-            // for now, give a hint as written text
-            font.draw(batch, "Select segment to delete", 180, Gdx.graphics.getHeight() - 50);
-        }
-
-        handleInput();
-        batch.end();
-
+        // update everything
         wheelRenderer.update(delta);
 
+        // render everything
         wheelRenderer.render();
         bettingAreaRenderer.render();
         chipRenderer.render();
@@ -132,6 +120,23 @@ public class GameScreen implements Screen {
         Vector3 mousePos = new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0);
         camera.unproject(mousePos);
         chipRenderer.renderChipInHand(mousePos.x, mousePos.y);
+
+        // draw current balance
+        batch.begin();
+        font.setColor(Color.WHITE);
+        font.getData().setScale(3f);
+        font.draw(batch, "$" + gameState.getBalanceMinusBets(), 50, Gdx.graphics.getHeight() - 50);
+
+        // draw delete segment instructions
+        if (gameState.getMode() == GameState.GameStateMode.DELETE_SEGMENT_SELECTING) {
+            // for now, give a hint as written text
+            font.draw(batch, "Select segment to delete", 180, Gdx.graphics.getHeight() - 50);
+        }
+        batch.end();
+
+        // handle input
+        handleInput();
+        handleHover();
     }
 
     @Override
@@ -289,6 +294,24 @@ public class GameScreen implements Screen {
                 case DELETE_SEGMENT_SELECTING:
                     handleInputDeleteSegmentSelecting();
             }
+        }
+    }
+
+    private void handleHoverDefault() {
+        Vector3 mousePos = new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0);
+        camera.unproject(mousePos);
+
+        shopRenderer.handleHover(mousePos.x,  mousePos.y);
+    }
+
+    private void handleHover() {
+        switch (gameState.getMode()) {
+            case DEFAULT:
+            case SPINNING:
+                handleHoverDefault();
+                break;
+            case DELETE_SEGMENT_SELECTING:
+
         }
     }
 

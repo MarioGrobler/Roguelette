@@ -69,6 +69,7 @@ public class SegmentDraw extends SegmentDrawBase {
         );
 
         font.draw(batch, layout, 0, 0);
+        batch.setTransformMatrix(new Matrix4()); // reset
 
         // draw multiplier if it is not the identity
         if (segment.getMultiplier() != 1f) {
@@ -100,13 +101,13 @@ public class SegmentDraw extends SegmentDrawBase {
             shapeRenderer.setTransformMatrix(matrix);
             shapeRenderer.setColor(Color.GOLDENROD);
             shapeRenderer.rect(-padding, -mulLayout.height - padding, mulLayout.width + 2 * padding, mulLayout.height + 2 * padding);
-            shapeRenderer.setTransformMatrix(shapeRenderer.getTransformMatrix().idt()); // reset matrix
+            shapeRenderer.setTransformMatrix(new Matrix4()); // reset
             shapeRenderer.end();
 
             batch.begin();
             batch.setTransformMatrix(matrix);
             font.draw(batch, mulLayout, 0, 0);
-            batch.setTransformMatrix(batch.getTransformMatrix().idt()); // also reset matrix
+            batch.setTransformMatrix(new Matrix4()); // reset
         }
         batch.end();
     }

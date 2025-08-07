@@ -7,13 +7,18 @@ public abstract class Segment {
         RED, BLACK, BOTH, NONE
     }
 
-    private SegmentColor color = SegmentColor.NONE;
-    private float multiplier = 1f;
+    protected SegmentColor color = SegmentColor.NONE;
+    protected float multiplier = 1f;
 
     public Segment() {}
 
     public Segment(SegmentColor color) {
+        this(color, 1f);
+    }
+
+    public Segment(SegmentColor color, float multiplier) {
         this.color = color;
+        this.multiplier = multiplier;
     }
 
     public SegmentColor getColor() {
@@ -32,6 +37,34 @@ public abstract class Segment {
         this.multiplier = multiplier;
     }
 
+    protected String getFunnyAdjective() {
+        if (multiplier < 1f) {
+            return "Bad";
+        }
+        if (multiplier == 1f) {
+            return "Normalmode";
+        }
+        if (multiplier <= 2f) {
+            return "Lucky";
+        }
+        if (multiplier <= 3f) {
+            return "Brilliant";
+        }
+        return "Magnificent";
+    }
+
+    /**
+     * @return A very short display text to draw on the number
+     */
     public abstract String getDisplayText();
 
+    /**
+     * @return A short description
+     */
+    public abstract String getShortDescription();
+
+    /**
+     * @return A not-so-short description
+     */
+    public abstract String getDescription();
 }
