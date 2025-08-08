@@ -6,9 +6,10 @@ import com.badlogic.gdx.math.Circle;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
+import de.mario.roguelette.render.Renderable;
 import de.mario.roguelette.util.MathHelper;
 
-public class SegmentShapeRenderer {
+public class SegmentShapeRenderer implements Renderable {
     private final ShapeRenderer shapeRenderer;
 
     float centerX;
@@ -19,6 +20,7 @@ public class SegmentShapeRenderer {
     float innerRadius;
     float rotation;
     Color color;
+    Color outlineColor = null;
 
     public SegmentShapeRenderer(final ShapeRenderer shapeRenderer, float centerX, float centerY, float outerRadius, float innerRadius) {
         this.shapeRenderer = shapeRenderer;
@@ -69,12 +71,17 @@ public class SegmentShapeRenderer {
         }
     }
 
+    @Override
     public void render() {
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         shapeRenderer.setColor(color);
         final Array<Vector2> points = prepareDonutSlice();
         drawPolygon(points);
         shapeRenderer.end();
+
+        if (outlineColor != null) {
+            renderOutline();
+        }
     }
 
     private float[] pointsToArray(final Array<Vector2> points) {
@@ -86,9 +93,9 @@ public class SegmentShapeRenderer {
         return result;
     }
 
-    public void renderOutline(final Color color) {
+    public void renderOutline() {
         shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-        shapeRenderer.setColor(color);
+        shapeRenderer.setColor(outlineColor);
         final Array<Vector2> points = prepareDonutSlice();
         shapeRenderer.polygon(pointsToArray(points));
         shapeRenderer.end();
@@ -99,6 +106,7 @@ public class SegmentShapeRenderer {
         return norm <= sweepAngle;
     }
 
+    @Override
     public boolean contains(float x, float y) {
         Circle outerCircle = new Circle(centerX, centerY, outerRadius);
         Circle innerCircle = new Circle(centerX, centerY, innerRadius);
@@ -171,6 +179,20 @@ public class SegmentShapeRenderer {
 
     public void setColor(Color color) {
         this.color = color;
+    }
+
+    /**
+     * @return the outline color or <code>null</code> if the outline is disabled. Default value is <code>null</code>.
+     */
+    public Color getOutlineColor() {
+        return outlineColor;
+    }
+
+    /**
+     * Sets the outline color. If the color is <code>null</code>, then the outline is disabled.
+     */
+    public void setOutlineColor(Color outlineColor) {
+        this.outlineColor = outlineColor;
     }
 
     public float getEndAngle() {

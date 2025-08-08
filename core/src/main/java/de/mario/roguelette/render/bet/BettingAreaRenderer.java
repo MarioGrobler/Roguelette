@@ -7,6 +7,7 @@ import com.badlogic.gdx.math.Circle;
 import com.badlogic.gdx.math.Rectangle;
 import de.mario.roguelette.GameState;
 import de.mario.roguelette.betting.*;
+import de.mario.roguelette.render.Renderable;
 import de.mario.roguelette.wheel.Segment;
 
 import java.util.ArrayList;
@@ -14,7 +15,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Optional;
 
-public class BettingAreaRenderer {
+public class BettingAreaRenderer implements Renderable {
     private final List<BetRegion> regions = new ArrayList<>();
 
     private final ShapeRenderer shapeRenderer;
@@ -298,12 +299,14 @@ public class BettingAreaRenderer {
         return Optional.empty();
     }
 
+    @Override
     public void render() {
         for (BetRegion region : regions) {
             region.render();
         }
     }
 
+    @Override
     public boolean contains(float x, float y) {
         //TODO optimize number fields
         for (BetRegion region : regions) {

@@ -31,7 +31,7 @@ public class MainMenuScreen implements Screen {
     @Override
     public void show() {
         batch = new SpriteBatch();
-        logoTexture = new Texture("logo/banner.png");
+        logoTexture = new Texture(Gdx.files.internal("logo/banner.png"));
         font = new BitmapFont();
         font.getData().setScale(2f);
         layout = new GlyphLayout(font, "Press the ENTER key", Color.WHITE, 0, Align.center, false);

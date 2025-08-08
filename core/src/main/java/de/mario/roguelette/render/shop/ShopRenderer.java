@@ -12,8 +12,10 @@ import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.utils.Align;
 import de.mario.roguelette.GameState;
 import de.mario.roguelette.items.ShopItem;
+import de.mario.roguelette.items.chances.ChanceShopItem;
 import de.mario.roguelette.items.segments.AddSegmentShopItem;
 import de.mario.roguelette.items.segments.SegmentShopItem;
+import de.mario.roguelette.render.Renderable;
 import de.mario.roguelette.render.segment.SegmentDeleteDraw;
 import de.mario.roguelette.render.segment.SegmentDraw;
 import de.mario.roguelette.render.segment.SegmentDrawBase;
@@ -24,7 +26,24 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public class ShopRenderer {
+public class ShopRenderer implements Renderable {
+
+    // Connects shop item and the render object
+    private static class ShopRecord {
+        private final Renderable renderable;
+        private final ShopItem shopItem;
+        private final float x;
+        private final float y;
+
+        private ShopRecord(final Renderable renderable, final ShopItem shopItem, float x, float y) {
+            this.renderable = renderable;
+            this.shopItem = shopItem;
+            this.x = x;
+            this.y = y;
+        }
+    }
+
+
     private final ShapeRenderer shapeRenderer;
     private final SpriteBatch batch;
     private final BitmapFont font;
@@ -35,7 +54,7 @@ public class ShopRenderer {
     private final Color color = new Color(0.5f, 0.35f, 0.2f, 1);
     private final float thickness = 5f;
 
-    private final List<SegmentDrawBase> segmentDraws = new ArrayList<>();
+    private final List<ShopRecord> records = new ArrayList<>();
 
     public ShopRenderer(final ShapeRenderer shapeRenderer, final SpriteBatch batch, final BitmapFont font, final GameState gameState, final Rectangle bounds) {
         this.shapeRenderer = shapeRenderer;
@@ -52,10 +71,10 @@ public class ShopRenderer {
         shapeRenderer.rect(rect.x + radius, rect.y + radius, rect.width - 2 * radius, rect.height - 2 * radius);
 
         // sides
-        shapeRenderer.rect(rect.x + radius, rect.y, rect.width - 2 * radius, radius); // unten
-        shapeRenderer.rect(rect.x + radius, rect.y + rect.height - radius, rect.width - 2 * radius, radius); // oben
-        shapeRenderer.rect(rect.x, rect.y + radius, radius, rect.height - 2 * radius); // links
-        shapeRenderer.rect(rect.x + rect.width - radius, rect.y + radius, radius, rect.height - 2 * radius); // rechts
+        shapeRenderer.rect(rect.x + radius, rect.y, rect.width - 2 * radius, radius); // down
+        shapeRenderer.rect(rect.x + radius, rect.y + rect.height - radius, rect.width - 2 * radius, radius); // up
+        shapeRenderer.rect(rect.x, rect.y + radius, radius, rect.height - 2 * radius); // left
+        shapeRenderer.rect(rect.x + rect.width - radius, rect.y + radius, radius, rect.height - 2 * radius); // right
 
         // rounded corners
         shapeRenderer.circle(rect.x + radius, rect.y + radius, radius);
@@ -110,33 +129,63 @@ public class ShopRenderer {
         batch.end();
     }
 
+    private void updateChanceItems() {
+        float width = bounds.width / 6f; // one half of a column
+        float height = width;
+        float x = bounds.x + bounds.width * 13/36f; // centered along the first third of the second column
+        float yMin = bounds.y + 20f;
+        float yMax = bounds.y + bounds.height - height - 20f;
+        float step = gameState.getShop().getChances().size() > 1 ?  //avoid div-by.zero
+                     (yMax - yMin) / (gameState.getShop().getChances().size() - 1) : 0;
 
-    public void updateItems() {
-        segmentDraws.clear();
+        for (int i = 0; i < gameState.getShop().getChances().size(); i++) {
+            float y = yMin + i * step;
+            ChanceShopItem item = gameState.getShop().getChances().get(i);
+            ChanceDraw cd = new ChanceDraw(item, shapeRenderer, batch, new Rectangle(x, y, width, height));
 
+            float midX = bounds.x + bounds.width * 3/6f; // mid of second col
+            float midY = y + height / 2f;
+            records.add(new ShopRecord(cd, item, midX, midY));
+        }
+    }
+
+    private void updateSegmentItems() {
         float x = bounds.x + bounds.width * 7/9f; // first third of third column
-        float outerRadius = 1.5f*bounds.height / gameState.getShop().getSegments().size();
+        float outerRadius = (float) Math.sqrt(2) * bounds.height / gameState.getShop().getSegments().size();
         float innerRadius = outerRadius / 2f;
         float yMin = bounds.y - innerRadius + 20f;
-        float yMax = bounds.y + bounds.height - innerRadius - 10f;
-        float step = (yMax - yMin) / gameState.getShop().getSegments().size();
+        float yMax = bounds.y + bounds.height - outerRadius - 20f;
+        float step = gameState.getShop().getSegments().size() > 1 ?  //avoid div-by.zero
+            (yMax - yMin) / (gameState.getShop().getSegments().size() - 1) : 0;
+
         for (int i = 0; i < gameState.getShop().getSegments().size(); i++) {
             float y = yMin + i * step;
             SegmentShopItem item = gameState.getShop().getSegments().get(i);
             SegmentDrawBase sd;
             if (item instanceof AddSegmentShopItem) {
-               Segment s = ((AddSegmentShopItem) item).getSegment();
-               sd = new SegmentDraw(s, shapeRenderer, batch, font, x, y, outerRadius, innerRadius);
+                Segment s = ((AddSegmentShopItem) item).getSegment();
+                sd = new SegmentDraw(s, shapeRenderer, batch, font, x, y, outerRadius, innerRadius);
             } else { // DeleteSegmentShopItem
                 sd = new SegmentDeleteDraw(shapeRenderer, batch, font, x, y, outerRadius, innerRadius);
             }
             sd.setStartAngle(-10);
             sd.setSweepAngle(20);
             sd.setRotation(90);
-            segmentDraws.add(sd);
+            sd.setOutlineColor(Color.WHITE);
+
+            float midX = bounds.x + bounds.width * 5/6f; // mid of third col
+            float midY = y + (outerRadius + innerRadius) / 2f;
+            records.add(new ShopRecord(sd, item, midX, midY));
         }
     }
 
+    public void updateItems() {
+        records.clear();
+        updateChanceItems();
+        updateSegmentItems();
+    }
+
+    @Override
     public void render() {
         // outer
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
@@ -155,17 +204,14 @@ public class ShopRenderer {
         shapeRenderer.end();
 
         // items
-        for (int i = 0; i < gameState.getShop().getSegments().size(); i++) {
-            SegmentDrawBase sd = segmentDraws.get(i);
-            sd.render();
-            sd.renderOutline(Color.WHITE);
+        for (ShopRecord record : records) {
+            record.renderable.render();
 
             // render price
-            ShopItem item = gameState.getShop().getSegments().get(i);
-            float y = sd.getCenterY() + (sd.getOuterRadius() + sd.getInnerRadius()) / 2f;
             batch.begin();
-            if (item.isSold()) {
-                float x = bounds.x + bounds.width * 5/6f;
+            float y = record.y;
+            if (record.shopItem.isSold()) {
+                float x = record.x;
                 font.getData().setScale(4f);
                 GlyphLayout layout = new GlyphLayout(font, "SOLD", Color.WHITE, 0, Align.center, false);
                 y += layout.height / 2f;
@@ -179,9 +225,10 @@ public class ShopRenderer {
                 batch.setTransformMatrix(new Matrix4()); // reset
             } else {
                 // if the item is still available, render the price
-                float x = bounds.x + bounds.width * 8/9f;
+                //TODO fix positioning with a glyph layout
+                float x = record.x + 1/18f * bounds.width; // shift the x position a bit to the right
                 font.getData().setScale(2f);
-                font.draw(batch, "$" + item.getCost(), x, y);
+                font.draw(batch, "$" + record.shopItem.getCost(), x, y);
             }
             batch.end();
 
@@ -197,12 +244,12 @@ public class ShopRenderer {
             return Optional.empty();
         }
 
-        for (int i = 0; i < segmentDraws.size(); i++) {
-            //TODO this is really not elegant
-            if (segmentDraws.get(i).contains(x, y)) {
-                return Optional.of(gameState.getShop().getSegments().get(i));
+        for (ShopRecord record : records) {
+            if (record.renderable.contains(x, y)) {
+                return Optional.of(record.shopItem);
             }
         }
+
         return Optional.empty();
     }
 

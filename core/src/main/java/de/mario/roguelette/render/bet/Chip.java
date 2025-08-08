@@ -7,9 +7,10 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Circle;
 import com.badlogic.gdx.math.MathUtils;
+import de.mario.roguelette.render.Renderable;
 import de.mario.roguelette.util.ColorHelper;
 
-public class Chip {
+public class Chip implements Renderable {
     private final ShapeRenderer shapeRenderer;
     private final SpriteBatch batch;
     private final BitmapFont font;
@@ -47,10 +48,12 @@ public class Chip {
         this.color = colorForValue(base);
     }
 
+    @Override
     public boolean contains(float x, float y) {
         return bounds.contains(x, y);
     }
 
+    @Override
     public void render() {
         // to grayscale if unavailable
         if (!available) {

@@ -4,8 +4,9 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import de.mario.roguelette.render.Renderable;
 
-public abstract class SegmentDrawBase {
+public abstract class SegmentDrawBase implements Renderable {
     protected final ShapeRenderer shapeRenderer;
     protected final SpriteBatch batch;
     protected final BitmapFont font;
@@ -18,12 +19,6 @@ public abstract class SegmentDrawBase {
         this.font = font;
 
         this.segmentShapeRenderer = new SegmentShapeRenderer(shapeRenderer, centerX, centerY, outerRadius, innerRadius);
-    }
-
-    public abstract void render();
-
-    public void renderOutline(final Color color) {
-        segmentShapeRenderer.renderOutline(color);
     }
 
     public float getCenterX() {
@@ -66,6 +61,20 @@ public abstract class SegmentDrawBase {
         segmentShapeRenderer.setColor(color);
     }
 
+    /**
+     * @return the outline color or <code>null</code> if the outline is disabled. Default value is <code>null</code>.
+     */
+    public Color getOutlineColor() {
+        return segmentShapeRenderer.getOutlineColor();
+    }
+
+    /**
+     * Sets the outline color. If the color is <code>null</code>, then the outline is disabled.
+     */
+    public void setOutlineColor(Color color) {
+        segmentShapeRenderer.setOutlineColor(color);
+    }
+
     public float getEndAngle() {
         return segmentShapeRenderer.getEndAngle();
     }
@@ -98,6 +107,7 @@ public abstract class SegmentDrawBase {
         return segmentShapeRenderer.angleInArc(angle);
     }
 
+    @Override
     public boolean contains(float x, float y) {
         return segmentShapeRenderer.contains(x, y);
     }

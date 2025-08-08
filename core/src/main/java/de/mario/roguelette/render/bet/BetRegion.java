@@ -5,8 +5,9 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import de.mario.roguelette.betting.Bet;
+import de.mario.roguelette.render.Renderable;
 
-public abstract class BetRegion {
+public abstract class BetRegion implements Renderable {
     protected final ShapeRenderer shapeRenderer;
     protected final SpriteBatch batch;
     protected final BitmapFont font;
@@ -27,6 +28,7 @@ public abstract class BetRegion {
         this.chip = null;
     }
 
+    @Override
     public abstract boolean contains(float x, float y);
 
     public Color getColor() {
@@ -36,8 +38,6 @@ public abstract class BetRegion {
     public void setColor(Color color) {
         this.color = color;
     }
-
-    public abstract void render();
 
     public abstract Bet createBet(int amount);
 

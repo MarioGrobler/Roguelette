@@ -6,12 +6,13 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Circle;
 import com.badlogic.gdx.math.Rectangle;
 import de.mario.roguelette.GameState;
+import de.mario.roguelette.render.Renderable;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public class ChipRenderer {
+public class ChipRenderer implements Renderable {
     private final ShapeRenderer shapeRenderer;
     private final SpriteBatch batch;
     private final BitmapFont font;
@@ -71,6 +72,7 @@ public class ChipRenderer {
         updateChipInHand();
     }
 
+    @Override
     public void render() {
         for (Chip chip : chips) {
             chip.render();
@@ -85,6 +87,7 @@ public class ChipRenderer {
         }
     }
 
+    @Override
     public boolean contains(float x, float y) {
         for (Chip chip : chips) {
             if (chip.contains(x, y)) {

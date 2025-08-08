@@ -1,5 +1,7 @@
 package de.mario.roguelette.betting;
 
+import de.mario.roguelette.GameState;
+import de.mario.roguelette.items.chances.ChanceShopItem;
 import de.mario.roguelette.wheel.Segment;
 
 public class Bet {
@@ -15,10 +17,21 @@ public class Bet {
         return betType.isWinningSegment(landed);
     }
 
-    public float getPayout(final Segment landed) {
+    /**
+     * @return the payout for this bet according to the following formula:
+     * amount * (base multiplier + chance base modifiers) * segment multiplier * chance total modifiers
+     */
+    public float getPayout(final Segment landed, final GameState gameState) {
         if (isWin(landed)) {
-            //TODO: there might be even more factors
-            return amount * betType.getPayoutMultiplier() * landed.getMultiplier();
+            // compute all payout modifiers
+            float base = betType.getPayoutMultiplier();
+            float totalMultiplier = 1f;
+            for (ChanceShopItem chance : gameState.getActiveChances()) {
+                base += chance.baseModifer(this);
+                totalMultiplier *= chance.totalModifer(this);
+            }
+
+            return amount * base * landed.getMultiplier() * totalMultiplier;
         }
         return 0;
     }

@@ -17,6 +17,7 @@ import de.mario.roguelette.Player;
 import de.mario.roguelette.RougeletteGame;
 import de.mario.roguelette.betting.Bet;
 import de.mario.roguelette.betting.BetType;
+import de.mario.roguelette.items.Inventory;
 import de.mario.roguelette.items.Shop;
 import de.mario.roguelette.items.ShopItem;
 import de.mario.roguelette.items.segments.AddSegmentShopItem;
@@ -58,7 +59,8 @@ public class GameScreen implements Screen {
 
     @Override
     public void show() {
-        Player player = new Player(100, "Yannik");
+        Inventory inventory = new Inventory();
+        Player player = new Player(inventory, 100, "Yannik");
         Wheel wheel = WheelFactory.createClassicWheel();
         BetManager betManager = new BetManager();
         Shop shop = new Shop();
@@ -77,7 +79,7 @@ public class GameScreen implements Screen {
         float wheelInnerRadius = wheelRadius * 0.6f;
         float wheelOuterRadius = wheelRadius * 1.2f;
         float wheelCenterX = wheelRadius * 1.2f + 50;
-        float wheelCenterY = Gdx.graphics.getHeight() / 2f;
+        float wheelCenterY = Gdx.graphics.getHeight() - wheelOuterRadius - 50;
         wheelRenderer = new WheelRenderer(shapeRenderer, batch, font, gameState, wheelRadius, wheelInnerRadius, wheelOuterRadius, wheelCenterX, wheelCenterY);
 
         float betStartX = Gdx.graphics.getWidth() / 2f + 25;
@@ -143,13 +145,7 @@ public class GameScreen implements Screen {
     public void resize(int width, int height) {
         camera.setToOrtho(false, width, height);
 
-        // resize wheel
-        float radius = Gdx.graphics.getHeight() / 3f;
-        float centerY = Gdx.graphics.getHeight() / 2f;
-        wheelRenderer.setRadii(radius, radius*0.6f, radius*1.2f);
-        wheelRenderer.setCenter(radius*1.2f + 50, centerY);
-
-        // TODO: resize the rest
+        // TODO: resize everything
     }
 
     @Override

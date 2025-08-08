@@ -42,6 +42,7 @@ public class SegmentDraw extends SegmentDrawBase {
         setColor(getDrawingColorFromSegment(segment));
     }
 
+    @Override
     public void render() {
         // draw slice
         segmentShapeRenderer.render();
@@ -83,7 +84,7 @@ public class SegmentDraw extends SegmentDrawBase {
 //            Gdx.gl.glDisable(GL20.GL_BLEND);
 
 
-            float mulRadius = getInnerRadius() + (getOuterRadius() - getInnerRadius()) * 0.2f;
+            float mulRadius = getInnerRadius() + (getOuterRadius() - getInnerRadius()) * 0.15f;
             float mulX = getCenterX() + MathUtils.cosDeg(cAngle) * mulRadius;
             float mulY = getCenterY() + MathUtils.sinDeg(cAngle) * mulRadius;
             font.getData().setScale(1.2f);

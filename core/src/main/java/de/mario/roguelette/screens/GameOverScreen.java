@@ -24,7 +24,7 @@ public class GameOverScreen implements Screen {
     @Override
     public void show() {
         batch = new SpriteBatch();
-        logoTexture = new Texture("logo/gameover.png");
+        logoTexture = new Texture(Gdx.files.internal("logo/gameover.png"));
     }
 
     @Override

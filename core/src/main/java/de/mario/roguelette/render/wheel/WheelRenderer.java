@@ -11,6 +11,7 @@ import com.badlogic.gdx.math.MathUtils;
 import de.mario.roguelette.GameState;
 import de.mario.roguelette.animator.BallAnimator;
 import de.mario.roguelette.animator.WheelAnimator;
+import de.mario.roguelette.render.Renderable;
 import de.mario.roguelette.render.segment.SegmentDraw;
 import de.mario.roguelette.util.MathHelper;
 import de.mario.roguelette.wheel.Segment;
@@ -19,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public class WheelRenderer {
+public class WheelRenderer implements Renderable {
     private final ShapeRenderer shapeRenderer;
     private final SpriteBatch batch;
     private final BitmapFont font;
@@ -115,6 +116,7 @@ public class WheelRenderer {
         return segmentDraws.get(0).getStartAngle();
     }
 
+    @Override
     public void render() {
         int segmentCount = gameState.getWheel().size();
         float rotationAngle = wheelAnimator.getRotationAngle();
@@ -172,22 +174,48 @@ public class WheelRenderer {
 
 
         // draw current segment
-        batch.begin();
-        batch.setTransformMatrix(batch.getTransformMatrix().idt());
-        font.setColor(Color.WHITE);
-        font.draw(batch, "Current number: " + getCurrentSegment(ballAnimator.getRotationAngle()).getDisplayText(), 50, 50);
-        batch.end();
+//        batch.begin();
+//        batch.setTransformMatrix(batch.getTransformMatrix().idt());
+//        font.setColor(Color.WHITE);
+//        font.draw(batch, "Current number: " + getCurrentSegment(ballAnimator.getRotationAngle()).getDisplayText(), 50, 50);
+//        batch.end();
 
-
-        // Cone of light
-//        Gdx.gl.glEnable(GL20.GL_BLEND);
-//        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
-//        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-//        shapeRenderer.setColor(1, 1, 1, 0.1f);
-//        shapeRenderer.arc(centerX, centerY, radius+40, 120, 60);
-//        shapeRenderer.end();
-//        Gdx.gl.glDisable(GL20.GL_BLEND);
+//        if (gameState.getMode() == GameState.GameStateMode.SPINNING) {
+//            lightshow(centerX - outerRadius, centerY + outerRadius, ballAnimator.getX(centerX), ballAnimator.getY(centerY), outerRadius / 2);
+//            lightshow(centerX + outerRadius, centerY + outerRadius, ballAnimator.getX(centerX), ballAnimator.getY(centerY), outerRadius / 2);
+//        }
     }
+
+    public void lightshow(float originX, float originY, float centerX, float centerY, float radius) {
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+
+        // render circle
+        shapeRenderer.setColor(1f, 1f, 1f, 0.12f);
+        shapeRenderer.circle(centerX, centerY, radius);
+
+        // distance
+        float dx = centerX - originX;
+        float dy = centerY - originY;
+
+        // render cone
+        //TODO there is something wrong with the trigonometry...
+        float angleDeg = MathUtils.atan2Deg360(dx, dy);
+        shapeRenderer.setColor(1f, 1f, 1f, 0.05f);
+
+        float x1 = centerX + MathUtils.cosDeg(angleDeg - radius) * radius;
+        float y1 = centerY + MathUtils.sinDeg(angleDeg - radius) * radius;
+
+        float x2 = centerX + MathUtils.cosDeg(angleDeg + radius) * radius;
+        float y2 = centerY + MathUtils.sinDeg(angleDeg + radius) * radius;
+
+        shapeRenderer.triangle(originX, originY, x1, y1, x2, y2);
+
+        shapeRenderer.end();
+        Gdx.gl.glDisable(GL20.GL_BLEND);
+    }
+
 
     public void update(float delta) {
         wheelAnimator.update(delta);
@@ -298,6 +326,7 @@ public class WheelRenderer {
         ballAnimator.setListener(listener);
     }
 
+    @Override
     public boolean contains(float x, float y) {
         return new Circle(centerX, centerY, outerRadius).contains(x, y);
     }

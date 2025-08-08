@@ -1,5 +1,6 @@
 package de.mario.roguelette.util;
 
+import de.mario.roguelette.GameState;
 import de.mario.roguelette.betting.Bet;
 import de.mario.roguelette.betting.BetType;
 import de.mario.roguelette.wheel.Segment;
@@ -53,10 +54,10 @@ public class BetManager {
         return total;
     }
 
-    public int computeReturn(Segment segment) {
+    public int computeReturn(final Segment segment, final GameState gameState) {
         float ret = 0;
         for (Bet b : bets) {
-            ret += b.getPayout(segment);
+            ret += b.getPayout(segment, gameState);
         }
         return (int) ret;
     }

@@ -19,7 +19,7 @@ public class AddSegmentShopItem extends SegmentShopItem {
 
     @Override
     public String getDescription() {
-        return segment.getDescription() + "\nCost: " + cost;
+        return String.format("%s\nCost: %d\nBuying this adds the segment immediately.", segment.getDescription(), cost);
     }
 
     @Override
