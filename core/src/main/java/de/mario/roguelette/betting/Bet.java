@@ -1,7 +1,7 @@
 package de.mario.roguelette.betting;
 
 import de.mario.roguelette.GameState;
-import de.mario.roguelette.items.chances.ChanceShopItem;
+import de.mario.roguelette.items.chances.PendingChanceShopItem;
 import de.mario.roguelette.wheel.Segment;
 
 public class Bet {
@@ -26,9 +26,9 @@ public class Bet {
             // compute all payout modifiers
             float base = betType.getPayoutMultiplier();
             float totalMultiplier = 1f;
-            for (ChanceShopItem chance : gameState.getActiveChances()) {
-                base += chance.baseModifer(this);
-                totalMultiplier *= chance.totalModifer(this);
+            for (PendingChanceShopItem chance : gameState.getPendingChanceManager().getActiveChances()) {
+                base += chance.baseModifier(this);
+                totalMultiplier *= chance.totalModifier(this);
             }
 
             return amount * base * landed.getMultiplier() * totalMultiplier;

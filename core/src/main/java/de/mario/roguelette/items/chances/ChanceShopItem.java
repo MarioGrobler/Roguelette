@@ -2,7 +2,7 @@ package de.mario.roguelette.items.chances;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
-import de.mario.roguelette.betting.Bet;
+import de.mario.roguelette.GameState;
 import de.mario.roguelette.items.ShopItem;
 
 
@@ -46,17 +46,12 @@ public abstract class ChanceShopItem extends ShopItem {
         this.renderInfo = renderInfo;
     }
 
-    /**
-     * Returns an additive factor that is added to the given bets bet type base multiplier.
-     */
-    public abstract float baseModifer(final Bet bet);
-
-    /**
-     * Returns a multiplicative factor that is applied at the end
-     */
-    public abstract float totalModifer(final Bet bet);
-
     public ChanceRenderInfo getRenderInfo() {
         return renderInfo;
     }
+
+    /**
+     * Triggers when the item is activated
+     */
+    public abstract void onActivate(final GameState gameState);
 }

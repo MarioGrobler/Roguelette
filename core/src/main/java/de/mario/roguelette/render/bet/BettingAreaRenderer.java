@@ -60,6 +60,7 @@ public class BettingAreaRenderer implements Renderable {
             region.deleteChip();
         }
 
+        //TODO das geht gar nicht
         for (BetRegion region : regions) {
             for (Bet bet : gameState.getBetManager().getBets()) {
                 if (region instanceof NumberRegion && bet.getBetType() instanceof NumberBet) {

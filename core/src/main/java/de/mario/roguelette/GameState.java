@@ -2,9 +2,12 @@ package de.mario.roguelette;
 
 import de.mario.roguelette.items.Shop;
 import de.mario.roguelette.items.chances.ChanceShopItem;
+import de.mario.roguelette.items.chances.PendingChanceShopItem;
+import de.mario.roguelette.items.fortunes.FortuneShopItem;
 import de.mario.roguelette.items.segments.DeleteSegmentShopItem;
 import de.mario.roguelette.util.BetManager;
 import de.mario.roguelette.util.MathHelper;
+import de.mario.roguelette.util.PendingChanceManager;
 import de.mario.roguelette.wheel.Segment;
 import de.mario.roguelette.wheel.Wheel;
 
@@ -19,8 +22,9 @@ public class GameState {
 
     private GameStateMode mode;
     private DeleteSegmentShopItem pendingDeleteItem = null;
-    private final List<ChanceShopItem> activeChances = new ArrayList<>();
+    private final PendingChanceManager pendingChanceManager = new PendingChanceManager();
 
+    private final List<FortuneShopItem> fortunes = new ArrayList<>();
 
     public enum GameStateMode {
         DEFAULT,
@@ -53,20 +57,36 @@ public class GameState {
         return shop;
     }
 
-    public List<ChanceShopItem> getActiveChances() {
-        return activeChances;
+    public PendingChanceManager getPendingChanceManager() {
+        return pendingChanceManager;
+    }
+
+    public void addFortune(final FortuneShopItem item) {
+        this.fortunes.add(item);
     }
 
     /**
      * Takes a chance from the inventory and adds it to the game states currently active chances
      * @param index the index of the chance in the players inventory
      */
-    public void activeChance(int index) {
-        activeChances.add(player.getInventory().popChanceAtIndex(index));
+    public void activateChance(int index) {
+        ChanceShopItem chance = player.getInventory().popChanceAtIndex(index);
+        chance.onActivate(this);
     }
 
-    public void resetActiveChances() {
-        activeChances.clear();
+    /**
+     * For every active chance item, applies {@link PendingChanceShopItem#onTurnChange(GameState)}.
+     * Similarly, for every fortune, applies {@link FortuneShopItem#onTurnChange(GameState)}.
+     * Afterwards, removes all expired chances from the active list.
+     */
+    public void applyOnTurnChangeEffects() {
+        for (FortuneShopItem item : fortunes) {
+            item.onTurnChange(this);
+        }
+        for (PendingChanceShopItem item : pendingChanceManager.getActiveChances()) {
+            item.onTurnChange(this);
+        }
+        pendingChanceManager.removeDeadChances();
     }
 
     public DeleteSegmentShopItem getPendingDeleteItem() {
@@ -108,7 +128,6 @@ public class GameState {
      */
     public void applyReturnOfBets(final Segment segment) {
         player.earn(betManager.computeReturn(segment, this));
-        resetActiveChances();
         betManager.clear();
     }
 

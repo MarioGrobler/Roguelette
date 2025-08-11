@@ -24,6 +24,7 @@ import de.mario.roguelette.items.segments.AddSegmentShopItem;
 import de.mario.roguelette.items.segments.DeleteSegmentShopItem;
 import de.mario.roguelette.render.bet.BettingAreaRenderer;
 import de.mario.roguelette.render.bet.ChipRenderer;
+import de.mario.roguelette.render.shop.ActiveChanceEffectsRenderer;
 import de.mario.roguelette.render.shop.ShopRenderer;
 import de.mario.roguelette.render.wheel.WheelRenderer;
 import de.mario.roguelette.util.BetManager;
@@ -49,6 +50,7 @@ public class GameScreen implements Screen {
     private BettingAreaRenderer bettingAreaRenderer;
     private ChipRenderer chipRenderer;
     private ShopRenderer shopRenderer;
+    private ActiveChanceEffectsRenderer activeChanceEffectsRenderer;
 
     private GameState gameState;
 
@@ -79,7 +81,7 @@ public class GameScreen implements Screen {
         float wheelInnerRadius = wheelRadius * 0.6f;
         float wheelOuterRadius = wheelRadius * 1.2f;
         float wheelCenterX = wheelRadius * 1.2f + 50;
-        float wheelCenterY = Gdx.graphics.getHeight() - wheelOuterRadius - 50;
+        float wheelCenterY = Gdx.graphics.getHeight() - wheelOuterRadius - 75;
         wheelRenderer = new WheelRenderer(shapeRenderer, batch, font, gameState, wheelRadius, wheelInnerRadius, wheelOuterRadius, wheelCenterX, wheelCenterY);
 
         float betStartX = Gdx.graphics.getWidth() / 2f + 25;
@@ -99,6 +101,12 @@ public class GameScreen implements Screen {
         float shopWidth = betWidth;
         float shopHeight = Gdx.graphics.getHeight() / 2f;
         shopRenderer = new ShopRenderer(shapeRenderer, batch, font, gameState, new Rectangle(shopStartX, shopStartY, shopWidth, shopHeight));
+
+        float chanceStartX = 240;
+        float chanceStartY = Gdx.graphics.getHeight() / 16f*15;
+        float chanceWidth = Gdx.graphics.getWidth() / 3f;
+        float chanceHeight = Gdx.graphics.getHeight() - chanceStartY - 15;
+        activeChanceEffectsRenderer = new ActiveChanceEffectsRenderer(shapeRenderer, batch, font, gameState, new  Rectangle(chanceStartX, chanceStartY, chanceWidth, chanceHeight));
     }
 
     @Override
@@ -117,6 +125,7 @@ public class GameScreen implements Screen {
         bettingAreaRenderer.render();
         chipRenderer.render();
         shopRenderer.render();
+        activeChanceEffectsRenderer.render();
 
         // render chip
         Vector3 mousePos = new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0);
@@ -127,12 +136,12 @@ public class GameScreen implements Screen {
         batch.begin();
         font.setColor(Color.WHITE);
         font.getData().setScale(3f);
-        font.draw(batch, "$" + gameState.getBalanceMinusBets(), 50, Gdx.graphics.getHeight() - 50);
+        font.draw(batch, "$" + gameState.getBalanceMinusBets(), 20, Gdx.graphics.getHeight() - 20);
 
         // draw delete segment instructions
         if (gameState.getMode() == GameState.GameStateMode.DELETE_SEGMENT_SELECTING) {
             // for now, give a hint as written text
-            font.draw(batch, "Select segment to delete", 180, Gdx.graphics.getHeight() - 50);
+            font.draw(batch, "Select segment to delete", Gdx.graphics.getWidth() / 2f + 25, Gdx.graphics.getHeight() / 2f + 60);
         }
         batch.end();
 
@@ -190,7 +199,7 @@ public class GameScreen implements Screen {
                     if (dsi != null) { // this should always be the case ...
                         if (dsi.tryBuy(gameState, index)) {
                             wheelRenderer.updateWheel();
-                            chipRenderer.createChips();
+                            chipRenderer.updateChips();
                         }
                     }
                 });
@@ -217,14 +226,19 @@ public class GameScreen implements Screen {
             wheelRenderer.spinWheelToTarget(targetAngle - center);
             wheelRenderer.spinBallToTarget(1000f, targetAngle);
             wheelRenderer.setBallListener(() -> {
+                // turn change
                 gameState.setMode(GameState.GameStateMode.DEFAULT);
                 gameState.getPlayer().pay(gameState.getBetManager().totalAmount());
                 gameState.applyReturnOfBets(segment);
                 if (gameState.getPlayer().isDead()) {
                     game.setScreen(new GameOverScreen(game));
+                    return;
                 }
-                chipRenderer.createChips();
+                gameState.applyOnTurnChangeEffects();
+
+                chipRenderer.updateChips();
                 bettingAreaRenderer.updateBetValues();
+                activeChanceEffectsRenderer.updateChances();
 
                 // also reset shop (?)
                 gameState.getShop().refreshItems();
@@ -236,7 +250,7 @@ public class GameScreen implements Screen {
             Optional<Integer> optChipValue = chipRenderer.handleLeftClick(touchPos.x, touchPos.y);
             optChipValue.ifPresent(value -> {
                 gameState.getPlayer().increaseHandBy(value);
-                chipRenderer.createChips();
+                chipRenderer.updateChips();
             });
 
             Optional<Bet> optBet = bettingAreaRenderer.handleLeftClick(touchPos.x, touchPos.y);
@@ -246,7 +260,7 @@ public class GameScreen implements Screen {
                 if (gameState.getBalanceMinusBets() < gameState.getPlayer().getCurrentlyInHand()) {
                     gameState.getPlayer().resetHand();
                 }
-                chipRenderer.createChips();
+                chipRenderer.updateChips();
             });
 
             Optional<ShopItem> optShopItem = shopRenderer.handleLeftClick(touchPos.x, touchPos.y);
@@ -257,8 +271,9 @@ public class GameScreen implements Screen {
                     return;
                 }
                 if (shopItem.tryBuy(gameState)) {
+                    activeChanceEffectsRenderer.updateChances(); //TODO move this when there is an inventory
                     wheelRenderer.updateWheel();
-                    chipRenderer.createChips();
+                    chipRenderer.updateChips();
                 }
             });
         }
@@ -266,13 +281,13 @@ public class GameScreen implements Screen {
         if (Gdx.input.isButtonJustPressed(Input.Buttons.RIGHT)) {
             if (gameState.getPlayer().getCurrentlyInHand() > 0) {
                 gameState.getPlayer().resetHand();
-                chipRenderer.createChips();
+                chipRenderer.updateChips();
             } else {
                 Optional<BetType> optBetType = bettingAreaRenderer.handleRightClick(touchPos.x, touchPos.y);
                 optBetType.ifPresent(betType -> {
                     gameState.getBetManager().removeBet(betType);
                     bettingAreaRenderer.updateBetValues();
-                    chipRenderer.createChips();
+                    chipRenderer.updateChips();
                 });
             }
         }

@@ -7,7 +7,7 @@ import de.mario.roguelette.GameState;
 import de.mario.roguelette.betting.Bet;
 
 
-public class DoubleNextWinChance extends ChanceShopItem {
+public class DoubleNextWinChance extends PendingChanceShopItem {
 
     public DoubleNextWinChance() {
         super(new ChanceRenderInfo(new Texture(Gdx.files.internal("icon/doubleNextWin.png")), Color.BLACK, Color.GOLDENROD, Color.BLACK));
@@ -29,16 +29,16 @@ public class DoubleNextWinChance extends ChanceShopItem {
 
         //TODO for now, simply activate them directly
         //TODO items with pending and non-pending effects should probably be handled differently
-        gameState.activeChance(0);
+        gameState.activateChance(0);
     }
 
     @Override
-    public float baseModifer(Bet bet) {
+    public float baseModifier(Bet bet) {
         return 0;
     }
 
     @Override
-    public float totalModifer(Bet bet) {
+    public float totalModifier(Bet bet) {
         return 2;
     }
 }

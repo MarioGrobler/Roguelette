@@ -1,22 +1,32 @@
 package de.mario.roguelette.render.shop;
 
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.utils.Align;
 import de.mario.roguelette.items.chances.ChanceShopItem;
+import de.mario.roguelette.items.chances.PendingChanceShopItem;
 import de.mario.roguelette.render.Renderable;
 
 public class ChanceDraw implements Renderable {
     private final ShapeRenderer shapeRenderer;
     private final SpriteBatch batch;
+    private final BitmapFont font;
     private final Rectangle bounds;
     private final ChanceShopItem item;
 
     private float thickness;
+    private boolean drawDuration = false;
 
-    public ChanceDraw(final ChanceShopItem item, final ShapeRenderer shapeRenderer, final SpriteBatch batch, final Rectangle bounds) {
+    public ChanceDraw(final ChanceShopItem item, final ShapeRenderer shapeRenderer, final SpriteBatch batch, final BitmapFont font, final Rectangle bounds) {
         this.shapeRenderer = shapeRenderer;
         this.batch = batch;
+        this.font = font;
         this.bounds = bounds;
         this.item = item;
 
@@ -58,6 +68,33 @@ public class ChanceDraw implements Renderable {
         batch.begin();
         batch.draw(item.getRenderInfo().getBackgrund(), bounds.x, bounds.y, bounds.width, bounds.height);
         batch.end();
+
+        // draw duration if flag is set
+        if (drawDuration && item instanceof PendingChanceShopItem) {
+            float centerX = bounds.x + bounds.width - 2*thickness;
+            float centerY = bounds.y + 2*thickness;
+            float radius = 2.5f*thickness;
+
+            Gdx.gl.glEnable(GL20.GL_BLEND);
+            Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+            shapeRenderer.setColor(new Color(1f, 1f, 1f, 0.9f));
+            shapeRenderer.circle(centerX, centerY, radius);
+            shapeRenderer.end();
+
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+            shapeRenderer.setColor(0f, 0f, 0f, 0.8f);
+            shapeRenderer.circle(centerX, centerY, radius);
+            shapeRenderer.end();
+
+            String dur = String.valueOf(((PendingChanceShopItem) item).getDuration());
+            font.getData().setScale(1.5f);
+            GlyphLayout layout = new GlyphLayout(font, dur, Color.BLACK, 0, Align.center, false);
+            batch.begin();
+            font.draw(batch, layout, centerX, centerY + layout.height/2f);
+            batch.end();
+            Gdx.gl.glDisable(GL20.GL_BLEND);
+        }
     }
 
     @Override
@@ -71,5 +108,13 @@ public class ChanceDraw implements Renderable {
 
     public void setThickness(float thickness) {
         this.thickness = thickness;
+    }
+
+    public boolean isDrawDuration() {
+        return drawDuration;
+    }
+
+    public void setDrawDuration(boolean drawDuration) {
+        this.drawDuration = drawDuration;
     }
 }

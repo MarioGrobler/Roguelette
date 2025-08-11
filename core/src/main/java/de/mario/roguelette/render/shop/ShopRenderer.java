@@ -13,6 +13,7 @@ import com.badlogic.gdx.utils.Align;
 import de.mario.roguelette.GameState;
 import de.mario.roguelette.items.ShopItem;
 import de.mario.roguelette.items.chances.ChanceShopItem;
+import de.mario.roguelette.items.fortunes.FortuneShopItem;
 import de.mario.roguelette.items.segments.AddSegmentShopItem;
 import de.mario.roguelette.items.segments.SegmentShopItem;
 import de.mario.roguelette.render.Renderable;
@@ -129,6 +130,27 @@ public class ShopRenderer implements Renderable {
         batch.end();
     }
 
+    private void updateFortuneItems() {
+        float width = bounds.width / 9f; // / (6*1.5)
+        float height = width;
+        float x = bounds.x + bounds.width * 1/36f; // centered along the first third of the first column
+        float yMin = bounds.y + 20f;
+        float yMax = bounds.y + bounds.height - 1.5f*height - 20f;
+        float step = gameState.getShop().getFortunes().size() > 1 ?  //avoid div-by.zero
+            (yMax - yMin) / (gameState.getShop().getFortunes().size() - 1) : 0;
+
+        for (int i = 0; i < gameState.getShop().getFortunes().size(); i++) {
+            float y = yMin + i * step;
+            FortuneShopItem item = gameState.getShop().getFortunes().get(i);
+            FortuneDraw fd = new FortuneDraw(item, shapeRenderer, batch, font, new Rectangle(x, y, width, height));
+            fd.setOutlineColor(Color.WHITE);
+
+            float midX = bounds.x + bounds.width * 1/6f; // mid of first col
+            float midY = y + bounds.width/12f;
+            records.add(new ShopRecord(fd, item, midX, midY));
+        }
+    }
+
     private void updateChanceItems() {
         float width = bounds.width / 6f; // one half of a column
         float height = width;
@@ -141,7 +163,7 @@ public class ShopRenderer implements Renderable {
         for (int i = 0; i < gameState.getShop().getChances().size(); i++) {
             float y = yMin + i * step;
             ChanceShopItem item = gameState.getShop().getChances().get(i);
-            ChanceDraw cd = new ChanceDraw(item, shapeRenderer, batch, new Rectangle(x, y, width, height));
+            ChanceDraw cd = new ChanceDraw(item, shapeRenderer, batch, font, new Rectangle(x, y, width, height));
 
             float midX = bounds.x + bounds.width * 3/6f; // mid of second col
             float midY = y + height / 2f;
@@ -181,6 +203,7 @@ public class ShopRenderer implements Renderable {
 
     public void updateItems() {
         records.clear();
+        updateFortuneItems();
         updateChanceItems();
         updateSegmentItems();
     }

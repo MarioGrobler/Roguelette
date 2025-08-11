@@ -45,10 +45,10 @@ public class ChipRenderer implements Renderable {
         this.chipRadius = chipRadius;
 
         this.chipInHand = new Chip(new Circle(0, 0, chipRadius), 0, 0, shapeRenderer, batch, font);
-        createChips();
+        updateChips();
     }
 
-    public void createChips() {
+    public void updateChips() {
         chips.clear();
 
 //        for (int i = 0; i < bases.length; i++) {
