@@ -12,6 +12,7 @@ import de.mario.roguelette.wheel.Segment;
 import de.mario.roguelette.wheel.Wheel;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class GameState {
@@ -63,6 +64,10 @@ public class GameState {
 
     public void addFortune(final FortuneShopItem item) {
         this.fortunes.add(item);
+    }
+
+    public List<FortuneShopItem> getFortunes() {
+        return Collections.unmodifiableList(fortunes);
     }
 
     /**

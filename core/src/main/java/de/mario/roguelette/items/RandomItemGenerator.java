@@ -5,6 +5,7 @@ import de.mario.roguelette.items.chances.ChanceShopItem;
 import de.mario.roguelette.items.chances.DoubleNextWinChance;
 import de.mario.roguelette.items.fortunes.FortuneShopItem;
 import de.mario.roguelette.items.fortunes.LightningStorm;
+import de.mario.roguelette.items.fortunes.PaintItBlackShopItem;
 import de.mario.roguelette.items.segments.AddSegmentShopItem;
 import de.mario.roguelette.items.segments.DeleteSegmentShopItem;
 import de.mario.roguelette.items.segments.SegmentShopItem;
@@ -102,7 +103,7 @@ public class RandomItemGenerator {
         List<FortuneShopItem> fortunes = new ArrayList<>();
 
         fortunes.add(new LightningStorm());
-        fortunes.add(new LightningStorm());
+        fortunes.add(new PaintItBlackShopItem());
         fortunes.add(new LightningStorm());
 
         return fortunes;

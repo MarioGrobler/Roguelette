@@ -37,7 +37,7 @@ import java.util.Optional;
 public class GameScreen implements Screen {
 
     private static final float MIN_SEGMENTS = 12;
-    private static final float MAX_SEGMENTS = 60;
+    private static final float MAX_SEGMENTS = 40;
 
     private final RougeletteGame game;
 
@@ -219,7 +219,8 @@ public class GameScreen implements Screen {
             float currentAngle = wheelRenderer.getCurrentRotation();
 
             Segment segment = wheelRenderer.getCurrentSegment(selectAngle);
-            float center = wheelRenderer.getCurrentSegmentStartAngle(selectAngle); // taking the start angle (in base rotation) seems to work very well, dunno why tbh
+            float halfSweepAngle = 360f / (2*gameState.getWheel().size());
+            float center = wheelRenderer.getCurrentSegmentStartAngle(selectAngle) + halfSweepAngle; // center angle of segment we are targeting
             System.out.println("select: " + selectAngle + ", target: " + targetAngle + ", current: " + currentAngle + ", s: " + segment.getDisplayText());
 
             gameState.setMode(GameState.GameStateMode.SPINNING);
@@ -236,6 +237,7 @@ public class GameScreen implements Screen {
                 }
                 gameState.applyOnTurnChangeEffects();
 
+                wheelRenderer.updateWheel();
                 chipRenderer.updateChips();
                 bettingAreaRenderer.updateBetValues();
                 activeChanceEffectsRenderer.updateChances();

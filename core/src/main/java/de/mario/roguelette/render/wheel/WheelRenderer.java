@@ -48,16 +48,6 @@ public class WheelRenderer implements Renderable {
         return sd;
     }
 
-    private void updateAnglePerSegment() {
-        anglePerSegment = 360f / gameState.getWheel().size();
-        segmentDraws.clear();
-        for (int i = 0; i < gameState.getWheel().size(); i++) {
-            float start = i * anglePerSegment;
-            //TODO calling createSegmentDraw here might be unnecessarily expensive
-            segmentDraws.add(createSegmentDraw(gameState.getWheel().getSegmentAt(i), start));
-        }
-    }
-
     public WheelRenderer(final ShapeRenderer shapeRenderer, final SpriteBatch batch, final BitmapFont font, final GameState gameState, float wheelRadius, float innerRadius, float outerRadius, float centerX, float centerY) {
         this.shapeRenderer = shapeRenderer;
         this.batch = batch;
@@ -73,11 +63,17 @@ public class WheelRenderer implements Renderable {
         this.wheelAnimator = new WheelAnimator();
         this.ballAnimator = new BallAnimator(wheelRadius-2*ballRadius);
 
-        updateAnglePerSegment();
+        updateWheel();
     }
 
     public void updateWheel() {
-        updateAnglePerSegment();
+        anglePerSegment = 360f / gameState.getWheel().size();
+        segmentDraws.clear();
+        for (int i = 0; i < gameState.getWheel().size(); i++) {
+            float start = i * anglePerSegment;
+            //TODO calling createSegmentDraw here might be unnecessarily expensive
+            segmentDraws.add(createSegmentDraw(gameState.getWheel().getSegmentAt(i), start));
+        }
     }
 
     /**
@@ -318,11 +314,11 @@ public class WheelRenderer implements Renderable {
         this.centerY = centerY;
     }
 
-    public void setWheelListener(final WheelAnimator.Listener wheelListener) {
+    public void setWheelListener(final WheelAnimator.SpinEndListener wheelListener) {
         wheelAnimator.setListener(wheelListener);
     }
 
-    public void setBallListener(final WheelAnimator.Listener listener) {
+    public void setBallListener(final WheelAnimator.SpinEndListener listener) {
         ballAnimator.setListener(listener);
     }
 
