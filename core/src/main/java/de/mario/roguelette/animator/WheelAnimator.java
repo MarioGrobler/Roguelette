@@ -76,20 +76,20 @@ public class WheelAnimator {
         if (decelerating) {
             float t = (System.nanoTime() - brakeStartTime) / 1_000_000_000f;
             if (t >= stopTime) {
-                rotationAngle = brakeStartAngle + brakeStartSpeed * stopTime - 0.5f * Math.abs(deceleration) * stopTime * stopTime;
+                rotationAngle = MathHelper.normalizeAngle(brakeStartAngle + brakeStartSpeed * stopTime - 0.5f * Math.abs(deceleration) * stopTime * stopTime);
                 currentSpeed = 0f;
                 spinning = false;
                 decelerating = false;
                 if (listener != null) listener.onSpinEnd();
                 return;
             } else {
-                rotationAngle = brakeStartAngle + brakeStartSpeed * t - 0.5f * Math.abs(deceleration) * t * t;
+                rotationAngle =MathHelper.normalizeAngle(brakeStartAngle + brakeStartSpeed * t - 0.5f * Math.abs(deceleration) * t * t);
                 currentSpeed = brakeStartSpeed - Math.abs(deceleration) * t;
             }
         } else if (spinning) {
             // constant spin
             float t = (System.nanoTime() - spinStartTime) / 1_000_000_000f;
-            rotationAngle = spinStartAngle + spinStartSpeed * t;
+            rotationAngle = MathHelper.normalizeAngle(spinStartAngle + spinStartSpeed * t);
             currentSpeed = spinStartSpeed;
         }
 
