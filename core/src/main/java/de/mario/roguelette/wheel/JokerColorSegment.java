@@ -25,4 +25,14 @@ public class JokerColorSegment extends Segment {
         return String.format("Color: %s\nMultiplier: %s", color, multiplier);
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        return super.equals(o);
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
 }

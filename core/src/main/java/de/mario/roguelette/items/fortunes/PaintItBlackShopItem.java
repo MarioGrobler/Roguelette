@@ -57,6 +57,6 @@ public class PaintItBlackShopItem extends FortuneShopItem {
 
     @Override
     public String getDescription() {
-        return "Every turn, paints a random segment of the wheel black and increases the payout multiplier of black color bets by 0.5";
+        return "Every turn, paints a random segment of the wheel black and increases the payout multiplier of black color bets by 0.5.\nCurrent bonus: " + blackModifier;
     }
 }

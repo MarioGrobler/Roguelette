@@ -1,4 +1,4 @@
-package de.mario.roguelette.render.shop;
+package de.mario.roguelette.render.item;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
@@ -12,6 +12,7 @@ import com.badlogic.gdx.utils.Align;
 import de.mario.roguelette.items.chances.ChanceShopItem;
 import de.mario.roguelette.items.chances.PendingChanceShopItem;
 import de.mario.roguelette.render.Renderable;
+import de.mario.roguelette.render.RoundedRectRenderer;
 
 public class ChanceDraw implements Renderable {
     private final ShapeRenderer shapeRenderer;
@@ -20,7 +21,8 @@ public class ChanceDraw implements Renderable {
     private final Rectangle bounds;
     private final ChanceShopItem item;
 
-    private float thickness;
+    private final RoundedRectRenderer roundedRectRenderer;
+
     private boolean drawDuration = false;
 
     public ChanceDraw(final ChanceShopItem item, final ShapeRenderer shapeRenderer, final SpriteBatch batch, final BitmapFont font, final Rectangle bounds) {
@@ -30,37 +32,26 @@ public class ChanceDraw implements Renderable {
         this.bounds = bounds;
         this.item = item;
 
-        thickness = bounds.width / 10f;
+        roundedRectRenderer = new RoundedRectRenderer(shapeRenderer, bounds);
+        roundedRectRenderer.setFillColor(item.getRenderInfo().getBackgrundColor());
+        roundedRectRenderer.setBorderColor(item.getRenderInfo().getBorderColor1());
+        roundedRectRenderer.setThickness(bounds.width / 10f);
+        roundedRectRenderer.setRadius(bounds.width / 10f);
     }
 
     @Override
     public void render() {
-        // middle rect
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        shapeRenderer.setColor(item.getRenderInfo().getBackgrundColor());
-        shapeRenderer.rect(bounds.x + thickness, bounds.y + thickness, bounds.width - 2*thickness, bounds.height - 2*thickness);
-
-        // sides
-        shapeRenderer.setColor(item.getRenderInfo().getBorderColor1());
-        shapeRenderer.rect(bounds.x + thickness, bounds.y, bounds.width - 2 * thickness, thickness); // down
-        shapeRenderer.rect(bounds.x + thickness, bounds.y + bounds.height - thickness, bounds.width - 2 * thickness, thickness); // up
-        shapeRenderer.rect(bounds.x, bounds.y + thickness, thickness, bounds.height - 2 * thickness); // left
-        shapeRenderer.rect(bounds.x + bounds.width - thickness, bounds.y + thickness, thickness, bounds.height - 2 * thickness); // right
-
-        // corner circles
-        shapeRenderer.circle(bounds.x + thickness, bounds.y + thickness, thickness);
-        shapeRenderer.circle(bounds.x + thickness, bounds.y + bounds.height - thickness, thickness);
-        shapeRenderer.circle(bounds.x + bounds.width - thickness, bounds.y + thickness, thickness);
-        shapeRenderer.circle(bounds.x + bounds.width - thickness, bounds.y + bounds.height - thickness, thickness);
+        roundedRectRenderer.render();
 
         // pattern
         float step = bounds.width / 5f;
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         shapeRenderer.setColor(item.getRenderInfo().getBorderColor2());
         for (float i = .5f; i < 4.5f; i += 2) {
-            shapeRenderer.rect(bounds.x + thickness + i*step, bounds.y, step, thickness); // down
-            shapeRenderer.rect(bounds.x + thickness + i*step, bounds.y + bounds.height - thickness, step, thickness); // up
-            shapeRenderer.rect(bounds.x, bounds.y + thickness + i*step, thickness, step); // left
-            shapeRenderer.rect(bounds.x + bounds.width - thickness, bounds.y + thickness + i*step, thickness, step); // right
+            shapeRenderer.rect(bounds.x + roundedRectRenderer.getThickness() + i*step, bounds.y, step, roundedRectRenderer.getThickness()); // down
+            shapeRenderer.rect(bounds.x + roundedRectRenderer.getThickness() + i*step, bounds.y + bounds.height - roundedRectRenderer.getThickness(), step, roundedRectRenderer.getThickness()); // up
+            shapeRenderer.rect(bounds.x, bounds.y + roundedRectRenderer.getThickness() + i*step, roundedRectRenderer.getThickness(), step); // left
+            shapeRenderer.rect(bounds.x + bounds.width - roundedRectRenderer.getThickness(), bounds.y + roundedRectRenderer.getThickness() + i*step, roundedRectRenderer.getThickness(), step); // right
         }
         shapeRenderer.end();
 
@@ -71,9 +62,9 @@ public class ChanceDraw implements Renderable {
 
         // draw duration if flag is set
         if (drawDuration && item instanceof PendingChanceShopItem) {
-            float centerX = bounds.x + bounds.width - 2*thickness;
-            float centerY = bounds.y + 2*thickness;
-            float radius = 2.5f*thickness;
+            float centerX = bounds.x + bounds.width - 2*roundedRectRenderer.getThickness();
+            float centerY = bounds.y + 2*roundedRectRenderer.getThickness();
+            float radius = 2.5f*roundedRectRenderer.getThickness();
 
             Gdx.gl.glEnable(GL20.GL_BLEND);
             Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
@@ -103,11 +94,11 @@ public class ChanceDraw implements Renderable {
     }
 
     public float getThickness() {
-        return thickness;
+        return roundedRectRenderer.getThickness();
     }
 
     public void setThickness(float thickness) {
-        this.thickness = thickness;
+        roundedRectRenderer.setThickness(thickness);
     }
 
     public boolean isDrawDuration() {

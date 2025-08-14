@@ -14,8 +14,8 @@ import java.text.DecimalFormat;
 
 public class SegmentDraw extends SegmentDrawBase {
 
-    private final Segment segment;
     private final DecimalFormat df = new DecimalFormat("0.#");
+    private Segment segment;
 
     private Color getDrawingColorFromSegment(final Segment segment) {
         if (segment == null) {
@@ -48,33 +48,34 @@ public class SegmentDraw extends SegmentDrawBase {
         segmentShapeRenderer.render();
 
         // draw texts
-        batch.begin();
-        font.getData().setScale(1.5f);
+        if (segment != null) {
+            batch.begin();
+            font.getData().setScale(1.5f);
 
-        float cAngle = getStartAngle() + 0.5f * getSweepAngle() + getRotation();
-        float textRadius = getOuterRadius() * .95f;
+            float cAngle = getStartAngle() + 0.5f * getSweepAngle() + getRotation();
+            float textRadius = getOuterRadius() * .95f;
 
-        float x = getCenterX() + MathUtils.cosDeg(cAngle) * textRadius;
-        float y = getCenterY() + MathUtils.sinDeg(cAngle) * textRadius;
+            float x = getCenterX() + MathUtils.cosDeg(cAngle) * textRadius;
+            float y = getCenterY() + MathUtils.sinDeg(cAngle) * textRadius;
 
-        String text = segment.getDisplayText();
+            String text = segment.getDisplayText();
 
-        // Rotate the text based on current rotation
-        GlyphLayout layout = new GlyphLayout(font, text, Color.WHITE, 0, Align.right, false);
-        float originY = layout.height / 2;
+            // Rotate the text based on current rotation
+            GlyphLayout layout = new GlyphLayout(font, text, Color.WHITE, 0, Align.right, false);
+            float originY = layout.height / 2;
 
-        batch.setTransformMatrix(batch.getTransformMatrix().idt()
-            .translate(x,y,0)
-            .rotate(0,0,1, cAngle)
-            .translate(0, originY,0)
-        );
+            batch.setTransformMatrix(batch.getTransformMatrix().idt()
+                .translate(x, y, 0)
+                .rotate(0, 0, 1, cAngle)
+                .translate(0, originY, 0)
+            );
 
-        font.draw(batch, layout, 0, 0);
-        batch.setTransformMatrix(new Matrix4()); // reset
+            font.draw(batch, layout, 0, 0);
+            batch.setTransformMatrix(new Matrix4()); // reset
 
-        // draw multiplier if it is not the identity
-        if (segment.getMultiplier() != 1f) {
-            // add a golden shimmer (maybe later)
+            // draw multiplier if it is not the identity
+            if (segment.getMultiplier() != 1f) {
+                // add a golden shimmer (maybe later)
 //            Gdx.gl.glEnable(GL20.GL_BLEND);
 //            Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
 //            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
@@ -84,33 +85,39 @@ public class SegmentDraw extends SegmentDrawBase {
 //            Gdx.gl.glDisable(GL20.GL_BLEND);
 
 
-            float mulRadius = getInnerRadius() + (getOuterRadius() - getInnerRadius()) * 0.15f;
-            float mulX = getCenterX() + MathUtils.cosDeg(cAngle) * mulRadius;
-            float mulY = getCenterY() + MathUtils.sinDeg(cAngle) * mulRadius;
-            font.getData().setScale(1.2f);
-            GlyphLayout mulLayout = new GlyphLayout(font, df.format(segment.getMultiplier()) + "x", Color.BLACK, 0, Align.left, false);
+                float mulRadius = getInnerRadius() + (getOuterRadius() - getInnerRadius()) * 0.15f;
+                float mulX = getCenterX() + MathUtils.cosDeg(cAngle) * mulRadius;
+                float mulY = getCenterY() + MathUtils.sinDeg(cAngle) * mulRadius;
+                font.getData().setScale(1.2f);
+                GlyphLayout mulLayout = new GlyphLayout(font, df.format(segment.getMultiplier()) + "x", Color.BLACK, 0, Align.left, false);
 
-            float padding = 6f;
+                float padding = 6f;
 
-            Matrix4 matrix = new Matrix4().idt()
-                .translate(mulX, mulY, 0)
-                .rotate(0, 0, 1, cAngle)
-                .translate(0, mulLayout.height / 2, 0);
+                Matrix4 matrix = new Matrix4().idt()
+                    .translate(mulX, mulY, 0)
+                    .rotate(0, 0, 1, cAngle)
+                    .translate(0, mulLayout.height / 2, 0);
 
+                batch.end();
+                shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+                shapeRenderer.setTransformMatrix(matrix);
+                shapeRenderer.setColor(Color.GOLDENROD);
+                shapeRenderer.rect(-padding, -mulLayout.height - padding, mulLayout.width + 2 * padding, mulLayout.height + 2 * padding);
+                shapeRenderer.setTransformMatrix(new Matrix4()); // reset
+                shapeRenderer.end();
+
+                batch.begin();
+                batch.setTransformMatrix(matrix);
+                font.draw(batch, mulLayout, 0, 0);
+                batch.setTransformMatrix(new Matrix4()); // reset
+            }
             batch.end();
-            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-            shapeRenderer.setTransformMatrix(matrix);
-            shapeRenderer.setColor(Color.GOLDENROD);
-            shapeRenderer.rect(-padding, -mulLayout.height - padding, mulLayout.width + 2 * padding, mulLayout.height + 2 * padding);
-            shapeRenderer.setTransformMatrix(new Matrix4()); // reset
-            shapeRenderer.end();
-
-            batch.begin();
-            batch.setTransformMatrix(matrix);
-            font.draw(batch, mulLayout, 0, 0);
-            batch.setTransformMatrix(new Matrix4()); // reset
         }
-        batch.end();
+    }
+
+    public void setSegment(Segment segment) {
+        this.segment = segment;
+        setColor(getDrawingColorFromSegment(segment));
     }
 
     public Segment getSegment() {

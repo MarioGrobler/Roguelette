@@ -44,8 +44,19 @@ public abstract class FortuneShopItem extends ShopItem {
     }
 
     @Override
+    public boolean tryBuy(final GameState gameState) {
+        if (!sold && canBuy(gameState.getPlayer()) && !gameState.getPlayer().getInventory().fortunesFull()) {
+            gameState.getPlayer().pay(getCost());
+            onBuy(gameState);
+            sold = true;
+            return true;
+        }
+        return false;
+    }
+
+    @Override
     protected void onBuy(final GameState gameState) {
-        gameState.addFortune(this);
+        gameState.getPlayer().getInventory().addFortune(this);
     }
 
     public abstract void onTurnChange(final GameState gameState);

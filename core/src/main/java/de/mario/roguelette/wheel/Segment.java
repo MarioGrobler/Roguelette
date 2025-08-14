@@ -1,5 +1,7 @@
 package de.mario.roguelette.wheel;
 
+import java.util.Objects;
+
 public abstract class Segment {
 
     public enum SegmentColor {
@@ -67,4 +69,16 @@ public abstract class Segment {
      * @return A not-so-short description
      */
     public abstract String getDescription();
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof Segment)) return false;
+        Segment segment = (Segment) o;
+        return Float.compare(multiplier, segment.multiplier) == 0 && color == segment.color;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(color, multiplier);
+    }
 }

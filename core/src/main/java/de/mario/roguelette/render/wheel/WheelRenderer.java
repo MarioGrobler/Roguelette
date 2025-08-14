@@ -112,6 +112,21 @@ public class WheelRenderer implements Renderable {
         return segmentDraws.get(0).getStartAngle();
     }
 
+    /**
+     * Returns the start angle (ignoring rotation) of the given segment in the wheel.
+     * If there is no such segment, returns an empty optional.
+     * The comparison of the segments is done using <code>equals</code>
+     */
+    public Optional<Float> findStartAngleForSegment(final Segment segment) {
+        for (SegmentDraw sd : segmentDraws) {
+            if (sd.getSegment().equals(segment)) {
+                // + rotation angle to be rotation independent
+                return Optional.of(MathHelper.normalizeAngle(sd.getStartAngle() + wheelAnimator.getRotationAngle()));
+            }
+        }
+        return Optional.empty();
+    }
+
     @Override
     public void render() {
         int segmentCount = gameState.getWheel().size();

@@ -11,9 +11,8 @@ import de.mario.roguelette.util.PendingChanceManager;
 import de.mario.roguelette.wheel.Segment;
 import de.mario.roguelette.wheel.Wheel;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.ArrayDeque;
+import java.util.Deque;
 
 public class GameState {
     private final Player player;
@@ -21,17 +20,34 @@ public class GameState {
     private final BetManager betManager;
     private final Shop shop;
 
-    private GameStateMode mode;
-    private DeleteSegmentShopItem pendingDeleteItem = null;
     private final PendingChanceManager pendingChanceManager = new PendingChanceManager();
+    private DeleteSegmentShopItem pendingDeleteItem = null;
+    private Segment crystalBallSegment = null;
 
-    private final List<FortuneShopItem> fortunes = new ArrayList<>();
 
     public enum GameStateMode {
         DEFAULT,
         SPINNING,
-        DELETE_SEGMENT_SELECTING
+        DELETE_SEGMENT_SELECTING,
+        SHOW_CRYSTAL_BALL,
+        SHOP_OPEN
     }
+
+    private static class TimedState {
+        GameStateMode mode;
+        float remainingTime; // <= 0 -> no timer
+        TimedState(GameStateMode mode) {
+            this(mode, -1);
+        }
+
+        TimedState(GameStateMode mode, float remainingTime) {
+            this.mode = mode;
+            this.remainingTime = remainingTime;
+        }
+    }
+
+    // bottom: "main states", top: "overlay states"
+    private final Deque<TimedState> stateStack = new ArrayDeque<>();
 
     public GameState(final Player player, final Wheel wheel, final BetManager betManager, final Shop shop) {
         this.player = player;
@@ -39,9 +55,10 @@ public class GameState {
         this.betManager = betManager;
         this.shop = shop;
 
-        this.mode = GameStateMode.DEFAULT;
+        this.stateStack.push(new TimedState(GameStateMode.DEFAULT));
     }
 
+    // getters for important objects
     public Player getPlayer() {
         return player;
     }
@@ -62,12 +79,45 @@ public class GameState {
         return pendingChanceManager;
     }
 
-    public void addFortune(final FortuneShopItem item) {
-        this.fortunes.add(item);
+    // state stack stuff
+    public void setState(GameStateMode state) {
+        stateStack.clear();
+        stateStack.push(new TimedState(state, -1));
     }
 
-    public List<FortuneShopItem> getFortunes() {
-        return Collections.unmodifiableList(fortunes);
+    public void pushState(GameStateMode state) {
+        stateStack.push(new TimedState(state, -1));
+    }
+
+    public void pushState(GameStateMode state, float duration) {
+        stateStack.push(new TimedState(state, duration));
+    }
+
+    public void popState() {
+        if (stateStack.size() > 1) {
+            stateStack.pop();
+        }
+    }
+
+    public GameStateMode getCurrentState() {
+        assert stateStack.peek() != null;
+        return stateStack.peek().mode;
+    }
+
+    public boolean isStateInStack(GameStateMode state) {
+        return stateStack.stream().anyMatch(s -> s.mode == state);
+    }
+
+    public void update(float delta) {
+        if(!stateStack.isEmpty()) {
+            TimedState state = stateStack.peek();
+            if (state.remainingTime > 0) {
+                state.remainingTime -= delta;
+                if (state.remainingTime <= 0) {
+                    popState();
+                }
+            }
+        }
     }
 
     /**
@@ -85,7 +135,7 @@ public class GameState {
      * Afterwards, removes all expired chances from the active list.
      */
     public void applyOnTurnChangeEffects() {
-        for (FortuneShopItem item : fortunes) {
+        for (FortuneShopItem item : player.getInventory().getFortunes()) {
             item.onTurnChange(this);
         }
         for (PendingChanceShopItem item : pendingChanceManager.getActiveChances()) {
@@ -102,12 +152,17 @@ public class GameState {
         this.pendingDeleteItem = pendingDeleteItem;
     }
 
-    public GameStateMode getMode() {
-        return mode;
+    public void activateCrystalBall(final Segment crystalBallSegment) {
+        this.crystalBallSegment = crystalBallSegment;
+        pushState(GameStateMode.SHOW_CRYSTAL_BALL, 2.5f);
     }
 
-    public void setMode(GameStateMode mode) {
-        this.mode = mode;
+    public Segment getCrystalBallSegment() {
+        return crystalBallSegment;
+    }
+
+    public void resetCrystalBallSegment() {
+        this.crystalBallSegment = null;
     }
 
     /**

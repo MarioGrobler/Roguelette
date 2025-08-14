@@ -28,7 +28,7 @@ public class DeleteSegmentShopItem extends SegmentShopItem {
     @Override
     public boolean tryBuy(GameState gameState) {
         if (!sold && canBuy(gameState.getPlayer())) {
-            gameState.setMode(GameState.GameStateMode.DELETE_SEGMENT_SELECTING);
+            gameState.pushState(GameState.GameStateMode.DELETE_SEGMENT_SELECTING);
             gameState.setPendingDeleteItem(this);
             return true;
         }
@@ -37,7 +37,7 @@ public class DeleteSegmentShopItem extends SegmentShopItem {
 
     /**
      * Actually tries to "buy" the item: deletes the segment with the given index from the wheel and charges the player.
-     * Afterwards, resets the game state (to {@link de.mario.roguelette.GameState.GameStateMode#DEFAULT}).
+     * Afterwards, resets game state (to {@link de.mario.roguelette.GameState.GameStateMode#DELETE_SEGMENT_SELECTING}).
      * @param segmentIndex the index of the segment to delete
      * @return true if successful
      */
@@ -46,7 +46,7 @@ public class DeleteSegmentShopItem extends SegmentShopItem {
             gameState.getWheel().removeSegmentAt(segmentIndex);
             gameState.getPlayer().pay(getCost());
             gameState.setPendingDeleteItem(null);
-            gameState.setMode(GameState.GameStateMode.DEFAULT);
+            gameState.popState();
             gameState.getShop().increaseNumOfSoldDeletes();
             sold = true;
             return true;

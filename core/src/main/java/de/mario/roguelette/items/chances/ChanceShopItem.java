@@ -38,6 +38,22 @@ public abstract class ChanceShopItem extends ShopItem {
         }
     }
 
+    @Override
+    public boolean tryBuy(final GameState gameState) {
+        if (!sold && canBuy(gameState.getPlayer()) && !gameState.getPlayer().getInventory().chancesFull()) {
+            gameState.getPlayer().pay(getCost());
+            onBuy(gameState);
+            sold = true;
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    protected void onBuy(GameState gameState) {
+        gameState.getPlayer().getInventory().addChance(this);
+    }
+
     // having this here might b look a bit inconvenient as this mixes up rendering and logic
     // however, the flexibility and scalability are a big advantage (and nothing is actually rendered, so it is fine)
     private final ChanceRenderInfo renderInfo;

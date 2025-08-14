@@ -2,6 +2,7 @@ package de.mario.roguelette.items;
 
 import com.badlogic.gdx.math.MathUtils;
 import de.mario.roguelette.items.chances.ChanceShopItem;
+import de.mario.roguelette.items.chances.CrystalBallShopItem;
 import de.mario.roguelette.items.chances.DoubleNextWinChance;
 import de.mario.roguelette.items.fortunes.FortuneShopItem;
 import de.mario.roguelette.items.fortunes.LightningStorm;
@@ -93,7 +94,7 @@ public class RandomItemGenerator {
         List<ChanceShopItem> chances = new ArrayList<>();
 
         chances.add(new DoubleNextWinChance());
-        chances.add(new DoubleNextWinChance());
+        chances.add(new CrystalBallShopItem());
         chances.add(new DoubleNextWinChance());
 
         return chances;

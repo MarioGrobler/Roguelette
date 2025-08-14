@@ -1,5 +1,7 @@
 package de.mario.roguelette.wheel;
 
+import java.util.Objects;
+
 public class JokerNumberRangeSegment extends Segment {
 
     private final int min;
@@ -40,5 +42,18 @@ public class JokerNumberRangeSegment extends Segment {
 
     public int getMax() {
         return max;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        JokerNumberRangeSegment that = (JokerNumberRangeSegment) o;
+        return min == that.min && max == that.max;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(min, max);
     }
 }

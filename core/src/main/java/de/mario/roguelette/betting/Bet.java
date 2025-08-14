@@ -27,7 +27,7 @@ public class Bet {
             // compute all payout modifiers
             float base = betType.getPayoutMultiplier();
             float totalMultiplier = 1f;
-            for (FortuneShopItem fortune : gameState.getFortunes()) {
+            for (FortuneShopItem fortune : gameState.getPlayer().getInventory().getFortunes()) {
                 base += fortune.baseModifier(this);
                 totalMultiplier *= fortune.totalModifier(this);
             }

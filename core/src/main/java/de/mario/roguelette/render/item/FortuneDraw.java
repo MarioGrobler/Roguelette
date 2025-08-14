@@ -1,4 +1,4 @@
-package de.mario.roguelette.render.shop;
+package de.mario.roguelette.render.item;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;

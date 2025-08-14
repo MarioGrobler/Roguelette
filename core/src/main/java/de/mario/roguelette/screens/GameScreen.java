@@ -24,8 +24,10 @@ import de.mario.roguelette.items.segments.AddSegmentShopItem;
 import de.mario.roguelette.items.segments.DeleteSegmentShopItem;
 import de.mario.roguelette.render.bet.BettingAreaRenderer;
 import de.mario.roguelette.render.bet.ChipRenderer;
-import de.mario.roguelette.render.shop.ActiveChanceEffectsRenderer;
-import de.mario.roguelette.render.shop.ShopRenderer;
+import de.mario.roguelette.render.item.ActiveChanceEffectsRenderer;
+import de.mario.roguelette.render.item.CrystalBallRenderer;
+import de.mario.roguelette.render.item.InventoryRenderer;
+import de.mario.roguelette.render.item.ShopRenderer;
 import de.mario.roguelette.render.wheel.WheelRenderer;
 import de.mario.roguelette.util.BetManager;
 import de.mario.roguelette.wheel.Segment;
@@ -37,7 +39,7 @@ import java.util.Optional;
 public class GameScreen implements Screen {
 
     private static final float MIN_SEGMENTS = 12;
-    private static final float MAX_SEGMENTS = 40;
+    private static final float MAX_SEGMENTS = 60;
 
     private final RougeletteGame game;
 
@@ -50,7 +52,9 @@ public class GameScreen implements Screen {
     private BettingAreaRenderer bettingAreaRenderer;
     private ChipRenderer chipRenderer;
     private ShopRenderer shopRenderer;
+    private InventoryRenderer inventoryRenderer;
     private ActiveChanceEffectsRenderer activeChanceEffectsRenderer;
+    private CrystalBallRenderer crystalBallRenderer;
 
     private GameState gameState;
 
@@ -76,23 +80,22 @@ public class GameScreen implements Screen {
         font = new BitmapFont();
         font.getData().setScale(1.5f);
 
-
         float wheelRadius = Gdx.graphics.getHeight() / 3f;
         float wheelInnerRadius = wheelRadius * 0.6f;
         float wheelOuterRadius = wheelRadius * 1.2f;
         float wheelCenterX = wheelRadius * 1.2f + 50;
-        float wheelCenterY = Gdx.graphics.getHeight() - wheelOuterRadius - 75;
+        float wheelCenterY = Gdx.graphics.getHeight() / 2f;
         wheelRenderer = new WheelRenderer(shapeRenderer, batch, font, gameState, wheelRadius, wheelInnerRadius, wheelOuterRadius, wheelCenterX, wheelCenterY);
 
-        float betStartX = Gdx.graphics.getWidth() / 2f + 25;
-        float betWidth = Gdx.graphics.getWidth() * 2f / 5f;
+        float betStartX = Gdx.graphics.getWidth() / 2f + 35;
+        float betWidth = Gdx.graphics.getWidth() * 4f / 9f - 20;
         float betHeight = betWidth / 4;
-        float betStartY = Gdx.graphics.getHeight() - betHeight - 20;
+        float betStartY = betHeight + 35;
         bettingAreaRenderer = new BettingAreaRenderer(shapeRenderer, batch, font, gameState, new Rectangle(betStartX, betStartY, betWidth, betHeight));
 
         float chipStartX = betStartX;
         float chipWidth = betWidth;
-        float chipStartY = betStartY - betHeight;
+        float chipStartY = betStartY - betHeight + 20;
         float chipRadius = 30;
         chipRenderer = new ChipRenderer(shapeRenderer, batch, font, gameState, new Rectangle(chipStartX, chipStartY, chipWidth,0) , chipRadius);
 
@@ -102,11 +105,23 @@ public class GameScreen implements Screen {
         float shopHeight = Gdx.graphics.getHeight() / 2f;
         shopRenderer = new ShopRenderer(shapeRenderer, batch, font, gameState, new Rectangle(shopStartX, shopStartY, shopWidth, shopHeight));
 
-        float chanceStartX = 240;
-        float chanceStartY = Gdx.graphics.getHeight() / 16f*15;
+        float inventoryStartX = betStartX;
+        float inventoryStartY = Gdx.graphics.getHeight() / 5f * 3;
+        float inventoryWidth = betWidth;
+        float inventoryHeight = Gdx.graphics.getHeight() / 5f * 2 - 20;
+        inventoryRenderer = new InventoryRenderer(shapeRenderer, batch, font, gameState, new Rectangle(inventoryStartX, inventoryStartY, inventoryWidth, inventoryHeight));
+
+        float chanceStartX = 50;
+        float chanceStartY = 20;
         float chanceWidth = Gdx.graphics.getWidth() / 3f;
-        float chanceHeight = Gdx.graphics.getHeight() - chanceStartY - 15;
-        activeChanceEffectsRenderer = new ActiveChanceEffectsRenderer(shapeRenderer, batch, font, gameState, new  Rectangle(chanceStartX, chanceStartY, chanceWidth, chanceHeight));
+        float chanceHeight = Gdx.graphics.getHeight() / 15f;
+        activeChanceEffectsRenderer = new ActiveChanceEffectsRenderer(shapeRenderer, batch, font, gameState, new Rectangle(chanceStartX, chanceStartY, chanceWidth, chanceHeight));
+
+        float crystalHeight = Gdx.graphics.getHeight() / 2f;
+        float crystalWidth = crystalHeight;
+        float crystalStartX = Gdx.graphics.getWidth() / 2f - crystalWidth / 2f;
+        float crystalStartY = Gdx.graphics.getHeight() / 2f - crystalHeight / 2f;
+        crystalBallRenderer = new CrystalBallRenderer(shapeRenderer, batch, font, gameState, new Rectangle(crystalStartX, crystalStartY, crystalWidth, crystalHeight));
     }
 
     @Override
@@ -118,14 +133,23 @@ public class GameScreen implements Screen {
         batch.setProjectionMatrix(camera.combined);
 
         // update everything
+        gameState.update(delta);
         wheelRenderer.update(delta);
 
         // render everything
         wheelRenderer.render();
         bettingAreaRenderer.render();
         chipRenderer.render();
-        shopRenderer.render();
         activeChanceEffectsRenderer.render();
+        inventoryRenderer.render();
+
+        if (gameState.isStateInStack(GameState.GameStateMode.SHOP_OPEN)) {
+            shopRenderer.render();
+        }
+        if (gameState.getCurrentState()  == GameState.GameStateMode.SHOW_CRYSTAL_BALL) {
+            crystalBallRenderer.render();
+        }
+
 
         // render chip
         Vector3 mousePos = new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0);
@@ -139,7 +163,7 @@ public class GameScreen implements Screen {
         font.draw(batch, "$" + gameState.getBalanceMinusBets(), 20, Gdx.graphics.getHeight() - 20);
 
         // draw delete segment instructions
-        if (gameState.getMode() == GameState.GameStateMode.DELETE_SEGMENT_SELECTING) {
+        if (gameState.getCurrentState() == GameState.GameStateMode.DELETE_SEGMENT_SELECTING) {
             // for now, give a hint as written text
             font.draw(batch, "Select segment to delete", Gdx.graphics.getWidth() / 2f + 25, Gdx.graphics.getHeight() / 2f + 60);
         }
@@ -182,7 +206,7 @@ public class GameScreen implements Screen {
     private void handleInputDeleteSegmentSelecting() {
         if (Gdx.input.isButtonJustPressed(Input.Buttons.RIGHT)) {
             // right click to cancel
-            gameState.setMode(GameState.GameStateMode.DEFAULT);
+            gameState.popState();
         }
 
         if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
@@ -207,6 +231,16 @@ public class GameScreen implements Screen {
         }
     }
 
+    private void handleInventory(float x, float y) {
+        Optional<Integer> optChanceIndex = inventoryRenderer.handleLeftClickChance(x, y);
+        optChanceIndex.ifPresent(chanceIndex -> {
+            gameState.getPlayer().getInventory().popChanceAtIndex(chanceIndex).onActivate(gameState);
+            activeChanceEffectsRenderer.updateChances();
+            inventoryRenderer.updateItems();
+            crystalBallRenderer.updateSegment();
+        });
+    }
+
     private void handleInputDefault() {
         Vector3 touchPos = new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0);
         camera.unproject(touchPos);
@@ -216,19 +250,27 @@ public class GameScreen implements Screen {
 
             float selectAngle = MathUtils.random(0f, 360f); // segment at this angle will be selected
             float targetAngle = MathUtils.random(0f, 360f); // rotation where this segment is going to be at the end
-            float currentAngle = wheelRenderer.getCurrentRotation();
 
+            // if the crystal ball item is active and still available, use this segment instead
+            if (gameState.getCrystalBallSegment() != null) {
+                Optional<Float> optStartAngle = wheelRenderer.findStartAngleForSegment(gameState.getCrystalBallSegment());
+                if (optStartAngle.isPresent()) {
+                    selectAngle = optStartAngle.get() + 1f; // +1 because checking exactly on the border can lead to selecting a neighbor
+                }
+            }
             Segment segment = wheelRenderer.getCurrentSegment(selectAngle);
+
+
             float halfSweepAngle = 360f / (2*gameState.getWheel().size());
             float center = wheelRenderer.getCurrentSegmentStartAngle(selectAngle) + halfSweepAngle; // center angle of segment we are targeting
-            System.out.println("select: " + selectAngle + ", target: " + targetAngle + ", current: " + currentAngle + ", s: " + segment.getDisplayText());
+            System.out.println("select: " + selectAngle + ", target: " + targetAngle + ", s: " + segment.getShortDescription());
 
-            gameState.setMode(GameState.GameStateMode.SPINNING);
+            gameState.setState(GameState.GameStateMode.SPINNING);
             wheelRenderer.spinWheelToTarget(targetAngle - center);
             wheelRenderer.spinBallToTarget(1000f, targetAngle);
             wheelRenderer.setBallListener(() -> {
                 // turn change
-                gameState.setMode(GameState.GameStateMode.DEFAULT);
+                gameState.setState(GameState.GameStateMode.DEFAULT);
                 gameState.getPlayer().pay(gameState.getBetManager().totalAmount());
                 gameState.applyReturnOfBets(segment);
                 if (gameState.getPlayer().isDead()) {
@@ -244,6 +286,7 @@ public class GameScreen implements Screen {
 
                 // also reset shop (?)
                 gameState.getShop().refreshItems();
+                gameState.resetCrystalBallSegment();
                 shopRenderer.updateItems();
             });
         }
@@ -265,19 +308,7 @@ public class GameScreen implements Screen {
                 chipRenderer.updateChips();
             });
 
-            Optional<ShopItem> optShopItem = shopRenderer.handleLeftClick(touchPos.x, touchPos.y);
-            optShopItem.ifPresent(shopItem -> {
-                // make sure that the number of wheel segments stays within the specified range
-                if ((shopItem instanceof AddSegmentShopItem && gameState.getWheel().size() >= MAX_SEGMENTS) ||
-                    (shopItem instanceof DeleteSegmentShopItem && gameState.getWheel().size() <= MIN_SEGMENTS)) {
-                    return;
-                }
-                if (shopItem.tryBuy(gameState)) {
-                    activeChanceEffectsRenderer.updateChances(); //TODO move this when there is an inventory
-                    wheelRenderer.updateWheel();
-                    chipRenderer.updateChips();
-                }
-            });
+            handleInventory(touchPos.x, touchPos.y);
         }
 
         if (Gdx.input.isButtonJustPressed(Input.Buttons.RIGHT)) {
@@ -295,9 +326,33 @@ public class GameScreen implements Screen {
         }
     }
 
+    private void handleInputShop() {
+        Vector3 touchPos = new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0);
+        camera.unproject(touchPos);
+        if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
+            Optional<ShopItem> optShopItem = shopRenderer.handleLeftClick(touchPos.x, touchPos.y);
+            optShopItem.ifPresent(shopItem -> {
+                // make sure that the number of wheel segments stays within the specified range
+                if ((shopItem instanceof AddSegmentShopItem && gameState.getWheel().size() >= MAX_SEGMENTS) ||
+                    (shopItem instanceof DeleteSegmentShopItem && gameState.getWheel().size() <= MIN_SEGMENTS)) {
+                    return;
+                }
+                if (shopItem.tryBuy(gameState)) {
+                    activeChanceEffectsRenderer.updateChances(); //TODO move this when there is an inventory
+                    crystalBallRenderer.updateSegment();
+                    wheelRenderer.updateWheel();
+                    chipRenderer.updateChips();
+                    inventoryRenderer.updateItems();
+                }
+            });
+
+            handleInventory(touchPos.x, touchPos.y);
+        }
+    }
+
     private void handleInput() {
         if (Gdx.input.justTouched()) {
-            switch (gameState.getMode()) {
+            switch (gameState.getCurrentState()) {
                 case DEFAULT:
                     handleInputDefault();
                     break;
@@ -306,25 +361,47 @@ public class GameScreen implements Screen {
                     break;
                 case DELETE_SEGMENT_SELECTING:
                     handleInputDeleteSegmentSelecting();
+                case SHOP_OPEN:
+                    handleInputShop();
             }
         }
+
+        if (Gdx.input.isKeyJustPressed(Input.Keys.S)) {
+            switch (gameState.getCurrentState()) {
+                case DEFAULT:
+                    gameState.pushState(GameState.GameStateMode.SHOP_OPEN);
+                    break;
+                case SHOP_OPEN:
+                    gameState.popState();
+            }
+        }
+    }
+
+    private void handleHoverShop() {
+        Vector3 mousePos = new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0);
+        camera.unproject(mousePos);
+
+        shopRenderer.handleHover(mousePos.x,  mousePos.y);
+        inventoryRenderer.handleHover(mousePos.x, mousePos.y);
     }
 
     private void handleHoverDefault() {
         Vector3 mousePos = new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0);
         camera.unproject(mousePos);
 
-        shopRenderer.handleHover(mousePos.x,  mousePos.y);
+        inventoryRenderer.handleHover(mousePos.x,  mousePos.y);
     }
 
     private void handleHover() {
-        switch (gameState.getMode()) {
-            case DEFAULT:
+        switch (gameState.getCurrentState()) {
+            case SHOP_OPEN:
+                handleHoverShop();
+                break;
             case SPINNING:
+            case DEFAULT:
                 handleHoverDefault();
                 break;
             case DELETE_SEGMENT_SELECTING:
-
         }
     }
 
