@@ -12,12 +12,13 @@ import de.mario.roguelette.wheel.Segment;
 import java.util.ArrayList;
 import java.util.List;
 
-public class PaintItBlackShopItem extends FortuneShopItem {
+public class PaintItBlackFortune extends FortuneShopItem {
 
     private float blackModifier = 0f;
 
-    public PaintItBlackShopItem() {
+    public PaintItBlackFortune() {
         super(new FortuneRenderInfo(new Texture(Gdx.files.internal("icon/paintItBlack.png")), Color.GOLDENROD, Color.BROWN));
+        this.cost = 20;
     }
 
     @Override

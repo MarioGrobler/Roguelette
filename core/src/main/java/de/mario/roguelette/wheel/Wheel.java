@@ -47,4 +47,10 @@ public class Wheel {
     public void removeSegmentAt(int index) {
         segments.remove(index);
     }
+
+    public void onTurnChange() {
+        for (Segment segment : segments) {
+            segment.onTurnChange();
+        }
+    }
 }

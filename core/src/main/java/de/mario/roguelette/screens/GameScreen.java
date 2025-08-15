@@ -71,6 +71,7 @@ public class GameScreen implements Screen {
         BetManager betManager = new BetManager();
         Shop shop = new Shop();
         gameState = new GameState(player, wheel, betManager, shop);
+        gameState.setState(GameState.GameStateMode.SHOP_OPEN); // start with open shop
 
         camera = new OrthographicCamera();
         camera.setToOrtho(false, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
@@ -156,16 +157,21 @@ public class GameScreen implements Screen {
         camera.unproject(mousePos);
         chipRenderer.renderChipInHand(mousePos.x, mousePos.y);
 
-        // draw current balance
+        // draw progression info
         batch.begin();
         font.setColor(Color.WHITE);
         font.getData().setScale(3f);
-        font.draw(batch, "$" + gameState.getBalanceMinusBets(), 20, Gdx.graphics.getHeight() - 20);
+        font.draw(batch, "Balance: $" + gameState.getBalanceMinusBets(), 20, Gdx.graphics.getHeight() - 20);
+        font.draw(batch, "Goal: $" + gameState.getRequiredChips(), 444, Gdx.graphics.getHeight() - 20);
+        font.getData().setScale(2f);
+        String s = gameState.isStateInStack(GameState.GameStateMode.SHOP_OPEN) ? "Shopping Time!" : String.format("Stage: %d, Round %d/%d", gameState.getCurrentStage(), gameState.getCurrentRound(), gameState.getRoundsInStage());
+        font.draw(batch, s, 20, Gdx.graphics.getHeight() - 70);
+
 
         // draw delete segment instructions
         if (gameState.getCurrentState() == GameState.GameStateMode.DELETE_SEGMENT_SELECTING) {
             // for now, give a hint as written text
-            font.draw(batch, "Select segment to delete", Gdx.graphics.getWidth() / 2f + 25, Gdx.graphics.getHeight() / 2f + 60);
+            font.draw(batch, "Select segment to delete", Gdx.graphics.getWidth() / 2f + 35, Gdx.graphics.getHeight() / 2f + 60);
         }
         batch.end();
 
@@ -247,6 +253,7 @@ public class GameScreen implements Screen {
 
         if (wheelRenderer.contains(touchPos.x, touchPos.y)
             && gameState.betsNotEmpty()) {
+            gameState.getPlayer().resetHand();
 
             float selectAngle = MathUtils.random(0f, 360f); // segment at this angle will be selected
             float targetAngle = MathUtils.random(0f, 360f); // rotation where this segment is going to be at the end
@@ -273,10 +280,8 @@ public class GameScreen implements Screen {
                 gameState.setState(GameState.GameStateMode.DEFAULT);
                 gameState.getPlayer().pay(gameState.getBetManager().totalAmount());
                 gameState.applyReturnOfBets(segment);
-                if (gameState.getPlayer().isDead()) {
-                    game.setScreen(new GameOverScreen(game));
-                    return;
-                }
+                gameState.endRound(game);
+
                 gameState.applyOnTurnChangeEffects();
 
                 wheelRenderer.updateWheel();
@@ -284,8 +289,6 @@ public class GameScreen implements Screen {
                 bettingAreaRenderer.updateBetValues();
                 activeChanceEffectsRenderer.updateChances();
 
-                // also reset shop (?)
-                gameState.getShop().refreshItems();
                 gameState.resetCrystalBallSegment();
                 shopRenderer.updateItems();
             });
@@ -366,15 +369,21 @@ public class GameScreen implements Screen {
             }
         }
 
-        if (Gdx.input.isKeyJustPressed(Input.Keys.S)) {
-            switch (gameState.getCurrentState()) {
-                case DEFAULT:
-                    gameState.pushState(GameState.GameStateMode.SHOP_OPEN);
-                    break;
-                case SHOP_OPEN:
-                    gameState.popState();
-            }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)
+            && gameState.isStateInStack(GameState.GameStateMode.SHOP_OPEN)) {
+
+            gameState.startNextRound();
         }
+
+//        if (Gdx.input.isKeyJustPressed(Input.Keys.S)) {
+//            switch (gameState.getCurrentState()) {
+//                case DEFAULT:
+//                    gameState.setState(GameState.GameStateMode.SHOP_OPEN);
+//                    break;
+//                case SHOP_OPEN:
+//                    gameState.setState(GameState.GameStateMode.DEFAULT);
+//            }
+//        }
     }
 
     private void handleHoverShop() {

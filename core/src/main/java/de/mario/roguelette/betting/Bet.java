@@ -36,7 +36,7 @@ public class Bet {
                 totalMultiplier *= chance.totalModifier(this);
             }
 
-            return amount * base * landed.getMultiplier() * totalMultiplier;
+            return amount * base * landed.getCurrentMultiplier() * totalMultiplier;
         }
         return 0;
     }

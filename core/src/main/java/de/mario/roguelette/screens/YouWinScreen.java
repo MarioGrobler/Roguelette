@@ -9,22 +9,25 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.ScreenUtils;
 import de.mario.roguelette.RougeletteGame;
 
-public class GameOverScreen implements Screen {
+public class YouWinScreen implements Screen {
 
-    private final Color BACKGROUND_COLOR = new Color(0x1F2932ff);
+    private final Color BACKGROUND_COLOR = new Color(0x000000ff);
 
     private final RougeletteGame game;
+    private final Screen gameScreen;
+
     private Texture logoTexture;
     private SpriteBatch batch;
 
-    public GameOverScreen(RougeletteGame game) {
+    public YouWinScreen(final RougeletteGame game, final Screen gameScreen) {
         this.game = game;
+        this.gameScreen = gameScreen;
     }
 
     @Override
     public void show() {
         batch = new SpriteBatch();
-        logoTexture = new Texture(Gdx.files.internal("logo/gameover.png"));
+        logoTexture = new Texture(Gdx.files.internal("logo/youwin.png"));
     }
 
     @Override
@@ -35,7 +38,7 @@ public class GameOverScreen implements Screen {
 
         float centerX = Gdx.graphics.getWidth() / 2f;
         float logoX = centerX - logoTexture.getWidth() / 2f;
-        float logoY = 50;
+        float logoY = 0;
 
         batch.begin();
         batch.draw(logoTexture, logoX, logoY);
@@ -70,9 +73,9 @@ public class GameOverScreen implements Screen {
 
     private void handleInput() {
         if (Gdx.input.justTouched()
-                || Gdx.input.isKeyJustPressed(Input.Keys.ENTER)
-                || Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-            game.setScreen(new MainMenuScreen(game));
+            || Gdx.input.isKeyJustPressed(Input.Keys.ENTER)
+            || Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            game.setScreen(gameScreen);
         }
     }
 }

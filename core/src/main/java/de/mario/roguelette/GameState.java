@@ -5,6 +5,8 @@ import de.mario.roguelette.items.chances.ChanceShopItem;
 import de.mario.roguelette.items.chances.PendingChanceShopItem;
 import de.mario.roguelette.items.fortunes.FortuneShopItem;
 import de.mario.roguelette.items.segments.DeleteSegmentShopItem;
+import de.mario.roguelette.screens.GameOverScreen;
+import de.mario.roguelette.screens.YouWinScreen;
 import de.mario.roguelette.util.BetManager;
 import de.mario.roguelette.util.MathHelper;
 import de.mario.roguelette.util.PendingChanceManager;
@@ -24,6 +26,12 @@ public class GameState {
     private DeleteSegmentShopItem pendingDeleteItem = null;
     private Segment crystalBallSegment = null;
 
+    // Progression
+    private int currentStage = 1;
+    private int currentRound = 1;
+    private int roundsInStage = 3;
+    private long requiredChips = 500; // Goal for first stage
+    private final long finalGoal = 1_000_000;
 
     public enum GameStateMode {
         DEFAULT,
@@ -130,11 +138,11 @@ public class GameState {
     }
 
     /**
-     * For every active chance item, applies {@link PendingChanceShopItem#onTurnChange(GameState)}.
-     * Similarly, for every fortune, applies {@link FortuneShopItem#onTurnChange(GameState)}.
-     * Afterwards, removes all expired chances from the active list.
+     * Activates all <code>onTurnChange</code> effects.
+     * Afterwards, removes all expired chances from the active chance list.
      */
     public void applyOnTurnChangeEffects() {
+        getWheel().onTurnChange();
         for (FortuneShopItem item : player.getInventory().getFortunes()) {
             item.onTurnChange(this);
         }
@@ -199,4 +207,84 @@ public class GameState {
         return MathHelper.magnitude(getAvailableBalance());
     }
 
+
+    public void endRound(final RougeletteGame game) {
+        if (player.isDead()) {
+            game.setScreen(new GameOverScreen(game));
+            return;
+        }
+
+        currentRound++;
+
+        if (currentRound > roundsInStage) {
+            // stage succeeded
+            if (player.getBalance() >= requiredChips) {
+                if (player.getBalance() >= finalGoal) {
+                    // you win!
+                    game.setScreen(new YouWinScreen(game, game.getScreen()));
+                    return;
+                }
+                startShopPhase();
+            } else { // game over
+                game.setScreen(new GameOverScreen(game));
+            }
+        }
+    }
+
+    private void startShopPhase() {
+        setState(GameStateMode.SHOP_OPEN);
+
+        currentStage++;
+        currentRound = 1;
+        roundsInStage = getRoundsForStage(currentStage);
+        requiredChips = getRequiredChipsForStage(currentStage);
+
+        shop.refreshItems();
+        shop.updatePrices(getPriceMultiplier(currentStage));
+    }
+
+    public void startNextRound() {
+        setState(GameStateMode.DEFAULT);
+    }
+
+    private int getRoundsForStage(int stage) {
+        if (stage < 3) return 3;
+        if (stage < 5) return 4;
+        return 5;
+    }
+
+    private long getRequiredChipsForStage(int stage) {
+        switch (stage) {
+            case 1: return 500;
+            case 2: return 2000;
+            case 3: return 8000;
+            case 4: return 40000;
+            case 5: return 200000;
+            default: return finalGoal;
+        }
+    }
+
+    private int getPriceMultiplier(int stage) {
+        return (int) Math.pow(10, stage - 1);
+    }
+
+    public int getCurrentStage() {
+        return currentStage;
+    }
+
+    public int getCurrentRound() {
+        return currentRound;
+    }
+
+    public int getRoundsInStage() {
+        return roundsInStage;
+    }
+
+    public long getRequiredChips() {
+        return requiredChips;
+    }
+
+    public long getFinalGoal() {
+        return finalGoal;
+    }
 }

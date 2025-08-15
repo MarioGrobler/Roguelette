@@ -2,6 +2,7 @@ package de.mario.roguelette.items;
 
 import de.mario.roguelette.items.chances.ChanceShopItem;
 import de.mario.roguelette.items.fortunes.FortuneShopItem;
+import de.mario.roguelette.items.segments.DeleteSegmentShopItem;
 import de.mario.roguelette.items.segments.SegmentShopItem;
 
 import java.util.Collections;
@@ -46,4 +47,20 @@ public class Shop {
         numOfSoldDeletes++;
     }
 
+    /**
+     * Increases all the prices by the given factor except the DeleteSegment
+     */
+    public void updatePrices(int factor) {
+        for (ChanceShopItem item : chances) {
+            item.cost *= factor;
+        }
+        for (FortuneShopItem item : fortunes) {
+            item.cost *= factor;
+        }
+        for (SegmentShopItem item : segments) {
+            if (!(item instanceof DeleteSegmentShopItem)) { // skip delete segment
+                item.cost *= factor;
+            }
+        }
+    }
 }

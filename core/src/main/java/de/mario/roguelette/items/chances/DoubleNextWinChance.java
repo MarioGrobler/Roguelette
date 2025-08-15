@@ -10,6 +10,7 @@ public class DoubleNextWinChance extends PendingChanceShopItem {
 
     public DoubleNextWinChance() {
         super(new ChanceRenderInfo(new Texture(Gdx.files.internal("icon/doubleNextWin.png")), Color.BLACK, Color.GOLDENROD, Color.BLACK));
+        this.cost = 20;
     }
 
     @Override

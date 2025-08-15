@@ -26,7 +26,7 @@ public abstract class RangeBet implements BetType {
         if (segment instanceof JokerColorSegment) {
             JokerColorSegment color = (JokerColorSegment)segment;
             for (int i = min; i <= max; i++) {
-                if (RouletteRules.getStandardColor(i) == color.getColor()) {
+                if (RouletteRules.getStandardColor(i) == color.getCurrentColor()) {
                     return true;
                 }
             }

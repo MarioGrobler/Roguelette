@@ -6,9 +6,10 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.MathUtils;
 import de.mario.roguelette.GameState;
 
-public class CrystalBallShopItem extends ChanceShopItem {
-    public CrystalBallShopItem() {
+public class CrystalBallChance extends ChanceShopItem {
+    public CrystalBallChance() {
         super(new ChanceRenderInfo(new Texture(Gdx.files.internal("icon/crystalBall.png")), Color.WHITE, Color.PURPLE, Color.CYAN));
+        this.cost = 25;
     }
 
     @Override

@@ -6,7 +6,6 @@ import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Circle;
-import com.badlogic.gdx.math.MathUtils;
 import de.mario.roguelette.render.Renderable;
 import de.mario.roguelette.util.ColorHelper;
 
@@ -59,7 +58,7 @@ public class Chip implements Renderable {
         if (!available) {
             color = ColorHelper.grayscale(color);
         }
-        Color darkColor = ColorHelper.darker(color);
+        Color darkColor = ColorHelper.darken(color);
 
         // border
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
@@ -68,11 +67,6 @@ public class Chip implements Renderable {
         float thickness = 5;
         for (int i = 0; i < alt; i++) {
             float angle = anglePerAlt * i;
-            float x1 = bounds.x + MathUtils.cosDeg(angle) * bounds.radius;
-            float y1 = bounds.y + MathUtils.sinDeg(angle) * bounds.radius;
-            float x2 = bounds.x + MathUtils.cosDeg(angle) * (bounds.radius - thickness);
-            float y2 = bounds.y + MathUtils.sinDeg(angle) * (bounds.radius - thickness);
-
             shapeRenderer.setColor(i % 2 == 0 ? Color.WHITE : darkColor);
             shapeRenderer.arc(bounds.x, bounds.y, bounds.radius, angle, anglePerAlt, 5);
         }

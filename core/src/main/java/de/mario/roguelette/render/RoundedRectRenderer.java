@@ -20,7 +20,7 @@ public class RoundedRectRenderer implements Renderable {
         this.bounds = bounds;
 
         this.fillColor = new Color(0.5f, 0.35f, 0.2f, 1);
-        this.borderColor = ColorHelper.darker(new Color(0.5f, 0.35f, 0.2f, 1));
+        this.borderColor = ColorHelper.darken(new Color(0.5f, 0.35f, 0.2f, 1));
     }
 
     private void drawRoundedRect(final Rectangle rect) {

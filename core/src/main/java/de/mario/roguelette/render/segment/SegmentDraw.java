@@ -14,6 +14,11 @@ import java.text.DecimalFormat;
 
 public class SegmentDraw extends SegmentDrawBase {
 
+    private final Color mulBackground = Color.GOLDENROD;
+    private final Color mulBorder = Color.GOLDENROD;
+    private final Color mulBackgroundEx = new Color(0xb22222ff);
+    private final Color mulBorderEx = Color.GOLDENROD;
+
     private final DecimalFormat df = new DecimalFormat("0.#");
     private Segment segment;
 
@@ -22,7 +27,7 @@ public class SegmentDraw extends SegmentDrawBase {
             return Color.PINK;
         }
 
-        switch(segment.getColor()) {
+        switch(segment.getCurrentColor()) {
             case RED:
                 return Color.RED;
             case BLACK:
@@ -74,7 +79,7 @@ public class SegmentDraw extends SegmentDrawBase {
             batch.setTransformMatrix(new Matrix4()); // reset
 
             // draw multiplier if it is not the identity
-            if (segment.getMultiplier() != 1f) {
+            if (segment.getCurrentMultiplier() != 1f) {
                 // add a golden shimmer (maybe later)
 //            Gdx.gl.glEnable(GL20.GL_BLEND);
 //            Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
@@ -89,7 +94,7 @@ public class SegmentDraw extends SegmentDrawBase {
                 float mulX = getCenterX() + MathUtils.cosDeg(cAngle) * mulRadius;
                 float mulY = getCenterY() + MathUtils.sinDeg(cAngle) * mulRadius;
                 font.getData().setScale(1.2f);
-                GlyphLayout mulLayout = new GlyphLayout(font, df.format(segment.getMultiplier()) + "x", Color.BLACK, 0, Align.left, false);
+                GlyphLayout mulLayout = new GlyphLayout(font, df.format(segment.getCurrentMultiplier()) + "x", Color.BLACK, 0, Align.left, false);
 
                 float padding = 6f;
 
@@ -101,7 +106,12 @@ public class SegmentDraw extends SegmentDrawBase {
                 batch.end();
                 shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
                 shapeRenderer.setTransformMatrix(matrix);
-                shapeRenderer.setColor(Color.GOLDENROD);
+                shapeRenderer.setColor(segment.getMultiplier() == segment.getCurrentMultiplier() ? mulBackground : mulBackgroundEx);
+                shapeRenderer.rect(-padding, -mulLayout.height - padding, mulLayout.width + 2 * padding, mulLayout.height + 2 * padding);
+                shapeRenderer.end();
+
+                shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+                shapeRenderer.setColor(segment.getMultiplier() == segment.getCurrentMultiplier() ? mulBorder : mulBorderEx);
                 shapeRenderer.rect(-padding, -mulLayout.height - padding, mulLayout.width + 2 * padding, mulLayout.height + 2 * padding);
                 shapeRenderer.setTransformMatrix(new Matrix4()); // reset
                 shapeRenderer.end();

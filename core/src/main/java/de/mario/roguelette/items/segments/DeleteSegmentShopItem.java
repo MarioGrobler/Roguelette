@@ -48,7 +48,8 @@ public class DeleteSegmentShopItem extends SegmentShopItem {
             gameState.setPendingDeleteItem(null);
             gameState.popState();
             gameState.getShop().increaseNumOfSoldDeletes();
-            sold = true;
+            //sold = true; // never sell this item, instead increase price
+            cost *= 2;
             return true;
         }
         return false;

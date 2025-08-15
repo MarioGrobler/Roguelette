@@ -14,9 +14,7 @@ import de.mario.roguelette.render.segment.SegmentDraw;
 import de.mario.roguelette.util.ColorHelper;
 
 public class CrystalBallRenderer implements Renderable {
-    private final ShapeRenderer shapeRenderer;
     private final SpriteBatch batch;
-    private final BitmapFont font;
     private final Rectangle bounds;
 
     private final GameState gameState;
@@ -26,15 +24,13 @@ public class CrystalBallRenderer implements Renderable {
     private final RoundedRectRenderer roundedRectRenderer;
 
     public CrystalBallRenderer(final ShapeRenderer shapeRenderer, final SpriteBatch batch, final BitmapFont font, final GameState gameState, final Rectangle bounds) {
-        this.shapeRenderer = shapeRenderer;
         this.batch = batch;
-        this.font = font;
         this.gameState = gameState;
         this.bounds = bounds;
 
         roundedRectRenderer = new RoundedRectRenderer(shapeRenderer, bounds);
         roundedRectRenderer.setFillColor(Color.WHITE);
-        roundedRectRenderer.setBorderColor(ColorHelper.darker(new Color(0.5f, 0.35f, 0.2f, 1)));
+        roundedRectRenderer.setBorderColor(ColorHelper.darken(new Color(0.5f, 0.35f, 0.2f, 1)));
 
         segmentDraw = new SegmentDraw(gameState.getCrystalBallSegment(), shapeRenderer, batch, font, bounds.x + bounds.width/2f, bounds.y + bounds.height/4f, bounds.height/2f, bounds.height/5f);
         segmentDraw.setStartAngle(-10);

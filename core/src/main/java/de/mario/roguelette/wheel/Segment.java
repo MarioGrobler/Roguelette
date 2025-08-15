@@ -1,8 +1,14 @@
 package de.mario.roguelette.wheel;
 
+import de.mario.roguelette.wheel.effects.SegmentEffect;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 public abstract class Segment {
+
+    private final List<SegmentEffect> effects = new ArrayList<>();
 
     public enum SegmentColor {
         // NONE eg for 0, BOTH for custom segments
@@ -80,5 +86,29 @@ public abstract class Segment {
     @Override
     public int hashCode() {
         return Objects.hash(color, multiplier);
+    }
+
+    public void addEffect(SegmentEffect effect) {
+        effects.add(effect);
+    }
+
+    public void onTurnChange() {
+        effects.removeIf(SegmentEffect::onTurnChange);
+    }
+
+    public float getCurrentMultiplier() {
+        float modifier = multiplier;
+        for (SegmentEffect effect : effects) {
+            modifier += effect.baseModifier();
+        }
+        return modifier;
+    }
+
+    public SegmentColor getCurrentColor() {
+        SegmentColor baseColor = color;
+        for (SegmentEffect effect : effects) {
+            baseColor = effect.colorModifier() == null ? baseColor : effect.colorModifier();
+        }
+        return baseColor;
     }
 }

@@ -26,7 +26,7 @@ public class NumberBet implements BetType {
             return range.getMin() <= number && number <= range.getMax();
         }
         if (segment instanceof JokerColorSegment) {
-            return RouletteRules.getStandardColor(number) == segment.getColor(); //TODO this might break if the betting area changes due to some effect
+            return RouletteRules.getStandardColor(number) == segment.getCurrentColor();
         }
         return false;
     }

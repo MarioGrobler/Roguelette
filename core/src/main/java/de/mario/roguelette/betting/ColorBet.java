@@ -18,7 +18,7 @@ public class ColorBet implements BetType {
 
     @Override
     public boolean isWinningSegment(Segment segment) {
-        return segment.getColor() == color;
+        return segment.getCurrentColor() == color;
     }
 
     @Override

@@ -7,9 +7,10 @@ import com.badlogic.gdx.math.MathUtils;
 import de.mario.roguelette.GameState;
 import de.mario.roguelette.betting.Bet;
 
-public class LightningStorm extends FortuneShopItem {
-    public LightningStorm() {
+public class LightningStormFortune extends FortuneShopItem {
+    public LightningStormFortune() {
         super(new FortuneRenderInfo(new Texture(Gdx.files.internal("icon/lightningStorm.png")), Color.GOLDENROD, Color.BROWN));
+        this.cost = 15;
     }
 
     @Override

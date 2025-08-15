@@ -2,11 +2,12 @@ package de.mario.roguelette.items;
 
 import com.badlogic.gdx.math.MathUtils;
 import de.mario.roguelette.items.chances.ChanceShopItem;
-import de.mario.roguelette.items.chances.CrystalBallShopItem;
+import de.mario.roguelette.items.chances.CrystalBallChance;
 import de.mario.roguelette.items.chances.DoubleNextWinChance;
 import de.mario.roguelette.items.fortunes.FortuneShopItem;
-import de.mario.roguelette.items.fortunes.LightningStorm;
-import de.mario.roguelette.items.fortunes.PaintItBlackShopItem;
+import de.mario.roguelette.items.fortunes.LightningStormFortune;
+import de.mario.roguelette.items.fortunes.PaintItBlackFortune;
+import de.mario.roguelette.items.fortunes.ScarletSurgeFortune;
 import de.mario.roguelette.items.segments.AddSegmentShopItem;
 import de.mario.roguelette.items.segments.DeleteSegmentShopItem;
 import de.mario.roguelette.items.segments.SegmentShopItem;
@@ -94,7 +95,7 @@ public class RandomItemGenerator {
         List<ChanceShopItem> chances = new ArrayList<>();
 
         chances.add(new DoubleNextWinChance());
-        chances.add(new CrystalBallShopItem());
+        chances.add(new CrystalBallChance());
         chances.add(new DoubleNextWinChance());
 
         return chances;
@@ -103,9 +104,9 @@ public class RandomItemGenerator {
     public List<FortuneShopItem> generateFortunes() {
         List<FortuneShopItem> fortunes = new ArrayList<>();
 
-        fortunes.add(new LightningStorm());
-        fortunes.add(new PaintItBlackShopItem());
-        fortunes.add(new LightningStorm());
+        fortunes.add(new LightningStormFortune());
+        fortunes.add(new PaintItBlackFortune());
+        fortunes.add(new ScarletSurgeFortune());
 
         return fortunes;
     }
