@@ -1,5 +1,8 @@
 package de.mario.roguelette.wheel;
 
+import de.mario.roguelette.wheel.effects.NumberModifier;
+import de.mario.roguelette.wheel.effects.SegmentEffect;
+
 import java.util.Objects;
 
 public class NumberSegment extends Segment {
@@ -21,21 +24,31 @@ public class NumberSegment extends Segment {
 
     @Override
     public String getDisplayText() {
-        return String.valueOf(this.number);
+        return String.valueOf(getCurrentNumber());
     }
 
     @Override
     public String getShortDescription() {
-        return getFunnyAdjective() + " " + number;
+        return getFunnyAdjective() + " " + getCurrentNumber();
     }
 
     @Override
     public String getDescription() {
-        return String.format("Number: %d\nColor: %s\nMultiplier: %s", number, color, multiplier);
+        return String.format("Number: %d%s\nColor: %s\nMultiplier: %s", number, getCurrentNumber() != number ? " (modified)" : "", color, multiplier);
     }
 
     public int getNumber() {
         return number;
+    }
+
+    public int getCurrentNumber() {
+        int num = number;
+        for (SegmentEffect effect : effects) {
+            if (effect instanceof NumberModifier) {
+                num = ((NumberModifier) effect).numberModifier();
+            }
+        }
+        return num;
     }
 
     @Override

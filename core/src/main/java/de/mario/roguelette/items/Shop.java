@@ -16,15 +16,27 @@ public class Shop {
     private final RandomItemGenerator randomItemGenerator = new RandomItemGenerator();
 
     private int numOfSoldDeletes = 0;
+    private int restocks;
 
     public Shop() {
-        refreshItems();
+        restockItems();
+        restocks = 0;
     }
 
-    public void refreshItems() {
+    /**
+     * Restocks the
+     */
+    public void reset() {
+        restockItems();
+        resetRestocks();
+    }
+
+    public void restockItems() {
         this.chances = randomItemGenerator.generateChances();
         this.fortunes = randomItemGenerator.generateFortunes();
         this.segments = randomItemGenerator.generateSegments(1 << numOfSoldDeletes);
+
+        restocks++;
     }
 
     public List<ChanceShopItem> getChances() {
@@ -41,6 +53,14 @@ public class Shop {
 
     public int getNumOfSoldDeletes() {
         return numOfSoldDeletes;
+    }
+
+    public int getRestocks() {
+        return restocks;
+    }
+
+    public void resetRestocks() {
+        restocks = 0;
     }
 
     public void increaseNumOfSoldDeletes() {
@@ -62,5 +82,10 @@ public class Shop {
                 item.cost *= factor;
             }
         }
+    }
+
+    public int getRestockPrice(int factor) {
+        // unscaled price: 2 + num of restocks
+        return (2 + restocks) * factor;
     }
 }

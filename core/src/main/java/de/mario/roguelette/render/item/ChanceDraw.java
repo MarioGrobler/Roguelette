@@ -57,7 +57,8 @@ public class ChanceDraw implements Renderable {
 
         // icon
         batch.begin();
-        batch.draw(item.getRenderInfo().getBackgrund(), bounds.x, bounds.y, bounds.width, bounds.height);
+        float thickness = roundedRectRenderer.getThickness();
+        batch.draw(item.getRenderInfo().getBackgrund(), bounds.x + thickness, bounds.y + thickness, bounds.width - 2*thickness, bounds.height - 2*thickness);
         batch.end();
 
         // draw duration if flag is set

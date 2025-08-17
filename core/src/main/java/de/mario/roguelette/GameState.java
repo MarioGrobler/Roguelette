@@ -3,6 +3,7 @@ package de.mario.roguelette;
 import de.mario.roguelette.items.Shop;
 import de.mario.roguelette.items.chances.ChanceShopItem;
 import de.mario.roguelette.items.chances.PendingChanceShopItem;
+import de.mario.roguelette.items.chances.WheelSelectChance;
 import de.mario.roguelette.items.fortunes.FortuneShopItem;
 import de.mario.roguelette.items.segments.DeleteSegmentShopItem;
 import de.mario.roguelette.screens.GameOverScreen;
@@ -24,6 +25,7 @@ public class GameState {
 
     private final PendingChanceManager pendingChanceManager = new PendingChanceManager();
     private DeleteSegmentShopItem pendingDeleteItem = null;
+    private WheelSelectChance pendingChanceItem = null;
     private Segment crystalBallSegment = null;
 
     // Progression
@@ -37,6 +39,7 @@ public class GameState {
         DEFAULT,
         SPINNING,
         DELETE_SEGMENT_SELECTING,
+        CHANCE_SEGMENT_SELECTING,
         SHOW_CRYSTAL_BALL,
         SHOP_OPEN
     }
@@ -156,8 +159,16 @@ public class GameState {
         return pendingDeleteItem;
     }
 
-    public void setPendingDeleteItem(DeleteSegmentShopItem pendingDeleteItem) {
+    public void setPendingDeleteItem(final DeleteSegmentShopItem pendingDeleteItem) {
         this.pendingDeleteItem = pendingDeleteItem;
+    }
+
+    public WheelSelectChance getPendingChanceItem() {
+        return pendingChanceItem;
+    }
+
+    public void setPendingChanceItem(WheelSelectChance pendingChanceItem) {
+        this.pendingChanceItem = pendingChanceItem;
     }
 
     public void activateCrystalBall(final Segment crystalBallSegment) {
@@ -239,8 +250,12 @@ public class GameState {
         roundsInStage = getRoundsForStage(currentStage);
         requiredChips = getRequiredChipsForStage(currentStage);
 
-        shop.refreshItems();
+        shop.reset();
         shop.updatePrices(getPriceMultiplier(currentStage));
+    }
+
+    public int getScaledRestockPrice() {
+        return shop.getRestockPrice(getPriceMultiplier(currentStage));
     }
 
     public void startNextRound() {

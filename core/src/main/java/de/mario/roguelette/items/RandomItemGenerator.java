@@ -4,6 +4,7 @@ import com.badlogic.gdx.math.MathUtils;
 import de.mario.roguelette.items.chances.ChanceShopItem;
 import de.mario.roguelette.items.chances.CrystalBallChance;
 import de.mario.roguelette.items.chances.DoubleNextWinChance;
+import de.mario.roguelette.items.chances.MirrorFateChance;
 import de.mario.roguelette.items.fortunes.FortuneShopItem;
 import de.mario.roguelette.items.fortunes.LightningStormFortune;
 import de.mario.roguelette.items.fortunes.PaintItBlackFortune;
@@ -96,7 +97,7 @@ public class RandomItemGenerator {
 
         chances.add(new DoubleNextWinChance());
         chances.add(new CrystalBallChance());
-        chances.add(new DoubleNextWinChance());
+        chances.add(new MirrorFateChance());
 
         return chances;
     }

@@ -21,7 +21,7 @@ public class ParityBet implements BetType {
     public boolean isWinningSegment(Segment segment) {
         if(segment instanceof NumberSegment) {
             NumberSegment numberSegment = (NumberSegment)segment;
-            return numberSegment.getNumber() != 0 && (numberSegment.getNumber() % 2 == 0) == even;
+            return numberSegment.getCurrentNumber() != 0 && (numberSegment.getCurrentNumber() % 2 == 0) == even;
         }
         if(segment instanceof JokerNumberRangeSegment) {
             JokerNumberRangeSegment range = (JokerNumberRangeSegment)segment;

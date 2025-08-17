@@ -3,14 +3,13 @@ package de.mario.roguelette.util;
 import de.mario.roguelette.items.chances.PendingChanceShopItem;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class PendingChanceManager {
     private final List<PendingChanceShopItem> activeChances = new ArrayList<>();
 
     public List<PendingChanceShopItem> getActiveChances() {
-        return Collections.unmodifiableList(activeChances);
+        return activeChances;
     }
 
     /**

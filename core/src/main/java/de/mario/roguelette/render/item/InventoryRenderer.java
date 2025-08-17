@@ -40,11 +40,11 @@ public class InventoryRenderer implements Renderable {
         this.gameState = gameState;
         this.bounds = bounds;
 
-        float heightPerBox = bounds.height / 2f - 10;
-        float yFortunes = bounds.y + bounds.height - heightPerBox;
+        float baseHeight = bounds.height / (float) (Math.sqrt(2) + 1);
+        float yFortunes = bounds.y + baseHeight + 30;
         this.tooltipRenderer = new TooltipRenderer(shapeRenderer, batch, font);
-        this.roundedRectRendererFortunes = new RoundedRectRenderer(shapeRenderer, new Rectangle(bounds.x, yFortunes, bounds.width, heightPerBox));
-        this.roundedRectRendererChances = new RoundedRectRenderer(shapeRenderer, new Rectangle(bounds.x, bounds.y, bounds.width, heightPerBox));
+        this.roundedRectRendererFortunes = new RoundedRectRenderer(shapeRenderer, new Rectangle(bounds.x, yFortunes, bounds.width, baseHeight * (float) Math.sqrt(2) - 10)); // This one bigger
+        this.roundedRectRendererChances = new RoundedRectRenderer(shapeRenderer, new Rectangle(bounds.x, bounds.y, bounds.width, baseHeight + 10));
 
         updateItems();
     }

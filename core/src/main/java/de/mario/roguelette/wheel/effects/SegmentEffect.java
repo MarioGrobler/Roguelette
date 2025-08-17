@@ -1,7 +1,5 @@
 package de.mario.roguelette.wheel.effects;
 
-import de.mario.roguelette.wheel.Segment;
-
 public abstract class SegmentEffect {
     protected int remainingRounds;
 
@@ -18,8 +16,4 @@ public abstract class SegmentEffect {
         remainingRounds--;
         return remainingRounds <= 0;
     }
-
-    public abstract float baseModifier();
-
-    public abstract Segment.SegmentColor colorModifier();
 }

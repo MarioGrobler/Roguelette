@@ -14,6 +14,9 @@ public class RoundedRectRenderer implements Renderable {
     private float thickness = 10f;
     private Color borderColor;
     private Color fillColor;
+    private Color highlightFillColor;
+
+    private boolean highlight = false;
 
     public RoundedRectRenderer(final ShapeRenderer shapeRenderer, final Rectangle bounds) {
         this.shapeRenderer = shapeRenderer;
@@ -21,6 +24,7 @@ public class RoundedRectRenderer implements Renderable {
 
         this.fillColor = new Color(0.5f, 0.35f, 0.2f, 1);
         this.borderColor = ColorHelper.darken(new Color(0.5f, 0.35f, 0.2f, 1));
+        this.highlightFillColor  = ColorHelper.lighten(fillColor);
     }
 
     private void drawRoundedRect(final Rectangle rect) {
@@ -48,7 +52,7 @@ public class RoundedRectRenderer implements Renderable {
         drawRoundedRect(bounds);
 
         // inner
-        shapeRenderer.setColor(fillColor);
+        shapeRenderer.setColor(highlight ? highlightFillColor : fillColor);
         Rectangle inner = new Rectangle(bounds.x + thickness, bounds.y + thickness, bounds.width - 2*thickness, bounds.height - 2*thickness);
         drawRoundedRect(inner);
 
@@ -94,5 +98,25 @@ public class RoundedRectRenderer implements Renderable {
 
     public void setFillColor(Color fillColor) {
         this.fillColor = fillColor;
+    }
+
+    public Color getHighlightFillColor() {
+        return highlightFillColor;
+    }
+
+    public void setHighlightFillColor(Color highlightFillColor) {
+        this.highlightFillColor = highlightFillColor;
+    }
+
+    public boolean isHighlight() {
+        return highlight;
+    }
+
+    public void setHighlight(boolean highlight) {
+        this.highlight = highlight;
+    }
+
+    public void handleHover(float x, float y) {
+        highlight = contains(x, y);
     }
 }

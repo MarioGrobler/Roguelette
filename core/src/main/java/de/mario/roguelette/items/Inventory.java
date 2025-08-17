@@ -17,7 +17,7 @@ public class Inventory {
     private final int chanceMaxSize;
 
     public Inventory() {
-        this(5,4);
+        this(5,5);
     }
 
     public Inventory(int fortuneSize, int chanceSize) {

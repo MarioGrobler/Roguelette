@@ -353,6 +353,10 @@ public class WheelRenderer implements Renderable {
     }
 
     public Optional<Integer> getSegmentIndexAt(float x, float y) {
+        if (!contains(x, y)) {
+            return Optional.empty();
+        }
+
         Circle wheelCircle = new Circle(centerX, centerY, wheelRadius);
         Circle innerCircle = new Circle(centerX, centerY, innerRadius);
         if (wheelCircle.contains(x, y) && !innerCircle.contains(x, y)) {

@@ -19,7 +19,7 @@ public class NumberBet implements BetType {
     @Override
     public boolean isWinningSegment(Segment segment) {
         if (segment instanceof NumberSegment) {
-            return ((NumberSegment)segment).getNumber() == number;
+            return ((NumberSegment)segment).getCurrentNumber() == number;
         }
         if (segment instanceof JokerNumberRangeSegment) {
             JokerNumberRangeSegment range = (JokerNumberRangeSegment)segment;

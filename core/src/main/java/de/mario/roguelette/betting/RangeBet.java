@@ -16,7 +16,7 @@ public abstract class RangeBet implements BetType {
     @Override
     public boolean isWinningSegment(Segment segment) {
         if (segment instanceof NumberSegment) {
-            int number = ((NumberSegment)segment).getNumber();
+            int number = ((NumberSegment)segment).getCurrentNumber();
             return number != 0 && min <= number && number <= max;
         }
         if (segment instanceof JokerNumberRangeSegment) {

@@ -20,6 +20,8 @@ import de.mario.roguelette.betting.BetType;
 import de.mario.roguelette.items.Inventory;
 import de.mario.roguelette.items.Shop;
 import de.mario.roguelette.items.ShopItem;
+import de.mario.roguelette.items.chances.ChanceShopItem;
+import de.mario.roguelette.items.chances.WheelSelectChance;
 import de.mario.roguelette.items.segments.AddSegmentShopItem;
 import de.mario.roguelette.items.segments.DeleteSegmentShopItem;
 import de.mario.roguelette.render.bet.BettingAreaRenderer;
@@ -100,16 +102,25 @@ public class GameScreen implements Screen {
         float chipRadius = 30;
         chipRenderer = new ChipRenderer(shapeRenderer, batch, font, gameState, new Rectangle(chipStartX, chipStartY, chipWidth,0) , chipRadius);
 
-        float shopStartX = betStartX;
+        float shopStartX = betStartX - 3; // a little bit to the left
         float shopStartY = 20f;
-        float shopWidth = betWidth;
-        float shopHeight = Gdx.graphics.getHeight() / 2f;
+        float shopWidth = betWidth * 13f/12 + 6; // and a little bit to the right
+        float shopHeight = Gdx.graphics.getHeight() / 2f * 1.2f;
         shopRenderer = new ShopRenderer(shapeRenderer, batch, font, gameState, new Rectangle(shopStartX, shopStartY, shopWidth, shopHeight));
+        shopRenderer.setListenerContinue(() -> gameState.startNextRound());
+        shopRenderer.setListenerRestock(() -> {
+            int price = gameState.getScaledRestockPrice();
+            if (player.canAfford(price)) {
+                player.pay(price);
+                shop.restockItems();
+                shopRenderer.updateItems();
+            }
+        });
 
-        float inventoryStartX = betStartX;
-        float inventoryStartY = Gdx.graphics.getHeight() / 5f * 3;
-        float inventoryWidth = betWidth;
-        float inventoryHeight = Gdx.graphics.getHeight() / 5f * 2 - 20;
+        float inventoryStartX = shopStartX;
+        float inventoryStartY = Gdx.graphics.getHeight() / 7f *5f-40;
+        float inventoryWidth = shopWidth;
+        float inventoryHeight = Gdx.graphics.getHeight() / 3.5f;
         inventoryRenderer = new InventoryRenderer(shapeRenderer, batch, font, gameState, new Rectangle(inventoryStartX, inventoryStartY, inventoryWidth, inventoryHeight));
 
         float chanceStartX = 50;
@@ -168,10 +179,12 @@ public class GameScreen implements Screen {
         font.draw(batch, s, 20, Gdx.graphics.getHeight() - 70);
 
 
-        // draw delete segment instructions
+        // draw select segment instructions
         if (gameState.getCurrentState() == GameState.GameStateMode.DELETE_SEGMENT_SELECTING) {
-            // for now, give a hint as written text
-            font.draw(batch, "Select segment to delete", Gdx.graphics.getWidth() / 2f + 35, Gdx.graphics.getHeight() / 2f + 60);
+            font.draw(batch, "Select segment to delete", Gdx.graphics.getWidth() / 2f + 35, Gdx.graphics.getHeight() / 2f * 1.2f + 60);
+        }
+        if (gameState.getCurrentState() == GameState.GameStateMode.CHANCE_SEGMENT_SELECTING) {
+            font.draw(batch, "Select segment to activate chance", Gdx.graphics.getWidth() / 2f + 35, Gdx.graphics.getHeight() / 2f * 1.2f + 60);
         }
         batch.end();
 
@@ -209,31 +222,59 @@ public class GameScreen implements Screen {
         font.dispose();
     }
 
-    private void handleInputDeleteSegmentSelecting() {
+    private void handleInputChanceSegmentSelecting() {
         if (Gdx.input.isButtonJustPressed(Input.Buttons.RIGHT)) {
             // right click to cancel
             gameState.popState();
+            //TODO this is really not elegant due to various reasons but for now it works
+            gameState.getPlayer().getInventory().addChance((ChanceShopItem) gameState.getPendingChanceItem());
+            gameState.setPendingChanceItem(null);
+            inventoryRenderer.updateItems();
+            return;
         }
 
         if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
             Vector3 touchPos = new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0);
             camera.unproject(touchPos);
 
-            if (wheelRenderer.contains(touchPos.x, touchPos.y)) {
-                // Just going by the index has two advantages
-                // first, we do not need equals for Segments
-                // second, there might be equivalent segments in the wheel
-                Optional<Integer> optSegmentIndex = wheelRenderer.getSegmentIndexAt(touchPos.x, touchPos.y);
-                optSegmentIndex.ifPresent(index -> {
-                    DeleteSegmentShopItem dsi = gameState.getPendingDeleteItem();
-                    if (dsi != null) { // this should always be the case ...
-                        if (dsi.tryBuy(gameState, index)) {
-                            wheelRenderer.updateWheel();
-                            chipRenderer.updateChips();
-                        }
+            Optional<Integer> optSegmentIndex = wheelRenderer.getSegmentIndexAt(touchPos.x, touchPos.y);
+            optSegmentIndex.ifPresent(index -> {
+                WheelSelectChance chance = gameState.getPendingChanceItem();
+                if (chance != null) { // should always be true...
+                    chance.onActivate(gameState, index);
+                    wheelRenderer.updateWheel();
+                    activeChanceEffectsRenderer.updateChances();
+                }
+            });
+        }
+
+    }
+
+    private void handleInputDeleteSegmentSelecting() {
+        if (Gdx.input.isButtonJustPressed(Input.Buttons.RIGHT)) {
+            // right click to cancel
+            gameState.popState();
+            gameState.setPendingDeleteItem(null);
+            return;
+        }
+
+        if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
+            Vector3 touchPos = new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0);
+            camera.unproject(touchPos);
+
+            // Just going by the index has two advantages
+            // first, we do not need equals for Segments
+            // second, there might be equivalent segments in the wheel
+            Optional<Integer> optSegmentIndex = wheelRenderer.getSegmentIndexAt(touchPos.x, touchPos.y);
+            optSegmentIndex.ifPresent(index -> {
+                DeleteSegmentShopItem dsi = gameState.getPendingDeleteItem();
+                if (dsi != null) { // this should always be the case ...
+                    if (dsi.tryBuy(gameState, index)) {
+                        wheelRenderer.updateWheel();
+                        chipRenderer.updateChips();
                     }
-                });
-            }
+                }
+            });
         }
     }
 
@@ -251,8 +292,7 @@ public class GameScreen implements Screen {
         Vector3 touchPos = new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0);
         camera.unproject(touchPos);
 
-        if (wheelRenderer.contains(touchPos.x, touchPos.y)
-            && gameState.betsNotEmpty()) {
+        if (wheelRenderer.contains(touchPos.x, touchPos.y) && gameState.betsNotEmpty()) {
             gameState.getPlayer().resetHand();
 
             float selectAngle = MathUtils.random(0f, 360f); // segment at this angle will be selected
@@ -364,6 +404,8 @@ public class GameScreen implements Screen {
                     break;
                 case DELETE_SEGMENT_SELECTING:
                     handleInputDeleteSegmentSelecting();
+                case CHANCE_SEGMENT_SELECTING:
+                    handleInputChanceSegmentSelecting();
                 case SHOP_OPEN:
                     handleInputShop();
             }
