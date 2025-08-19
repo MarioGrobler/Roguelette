@@ -43,7 +43,10 @@ public class MirrorFateChance extends PendingChanceShopItem implements WheelSele
 
     @Override
     public String getDescription() {
-        return "Select a number segment. Selects randomly up to 10 number segments to copy the number of the chosen one. Increases the base payout multiplier for number bets involving the chosen number to 50. Lasts for one turn.";
+        if (mirrorNumber == -1) {
+            return "Select a number segment. Selects randomly up to 10 number segments to copy the number of the chosen one. Increases the base payout multiplier for number bets involving the chosen number to 50. Lasts for one turn.";
+        }
+        return "The base payout multiplier for number bets on " + mirrorNumber + " is increased to 50.";
     }
 
     @Override

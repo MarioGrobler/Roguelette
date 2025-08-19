@@ -72,7 +72,7 @@ public class GameScreen implements Screen {
         Wheel wheel = WheelFactory.createClassicWheel();
         BetManager betManager = new BetManager();
         Shop shop = new Shop();
-        gameState = new GameState(player, wheel, betManager, shop);
+        gameState = new GameState(player, wheel, betManager, shop, game.getMusicManager());
         gameState.setState(GameState.GameStateMode.SHOP_OPEN); // start with open shop
 
         camera = new OrthographicCamera();
@@ -147,6 +147,7 @@ public class GameScreen implements Screen {
         // update everything
         gameState.update(delta);
         wheelRenderer.update(delta);
+        game.getMusicManager().update(delta);
 
         // render everything
         wheelRenderer.render();
@@ -404,10 +405,13 @@ public class GameScreen implements Screen {
                     break;
                 case DELETE_SEGMENT_SELECTING:
                     handleInputDeleteSegmentSelecting();
+                    break;
                 case CHANCE_SEGMENT_SELECTING:
                     handleInputChanceSegmentSelecting();
+                    break;
                 case SHOP_OPEN:
                     handleInputShop();
+                    break;
             }
         }
 
@@ -418,13 +422,13 @@ public class GameScreen implements Screen {
         }
 
 //        if (Gdx.input.isKeyJustPressed(Input.Keys.S)) {
-//            switch (gameState.getCurrentState()) {
-//                case DEFAULT:
-//                    gameState.setState(GameState.GameStateMode.SHOP_OPEN);
-//                    break;
-//                case SHOP_OPEN:
-//                    gameState.setState(GameState.GameStateMode.DEFAULT);
-//            }
+//            game.getMusicManager().setShopMode();
+//        }
+//        if (Gdx.input.isKeyJustPressed(Input.Keys.D)) {
+//            game.getMusicManager().setDefaultMode();
+//        }
+//        if (Gdx.input.isKeyJustPressed(Input.Keys.C)) {
+//            game.getMusicManager().setCrystalBallMode();
 //        }
     }
 
@@ -434,6 +438,7 @@ public class GameScreen implements Screen {
 
         shopRenderer.handleHover(mousePos.x,  mousePos.y);
         inventoryRenderer.handleHover(mousePos.x, mousePos.y);
+        activeChanceEffectsRenderer.handleHover(mousePos.x, mousePos.y);
     }
 
     private void handleHoverDefault() {
@@ -441,6 +446,7 @@ public class GameScreen implements Screen {
         camera.unproject(mousePos);
 
         inventoryRenderer.handleHover(mousePos.x,  mousePos.y);
+        activeChanceEffectsRenderer.handleHover(mousePos.x, mousePos.y);
     }
 
     private void handleHover() {
@@ -448,11 +454,14 @@ public class GameScreen implements Screen {
             case SHOP_OPEN:
                 handleHoverShop();
                 break;
+            // default behavior for all these should be fine
             case SPINNING:
+            case DELETE_SEGMENT_SELECTING:
+            case CHANCE_SEGMENT_SELECTING:
             case DEFAULT:
                 handleHoverDefault();
                 break;
-            case DELETE_SEGMENT_SELECTING:
+
         }
     }
 

@@ -15,7 +15,13 @@ public class CrystalBallChance extends ChanceShopItem {
     @Override
     public void onActivate(final GameState gameState) {
         int index = MathUtils.random(gameState.getWheel().size() - 1);
-        gameState.activateCrystalBall(gameState.getWheel().getSegmentAt(index));
+        gameState.setCrystalBallSegment(gameState.getWheel().getSegmentAt(index));
+        gameState.pushState(GameState.GameStateMode.SHOW_CRYSTAL_BALL, 2.5f, () -> {
+            // 20% chance of lie!
+            if (MathUtils.random() < 0.2) {
+                gameState.resetCrystalBallSegment();
+            }
+        });
 
         System.out.println(gameState.getWheel().getSegmentAt(index).getDescription());
     }
@@ -27,6 +33,6 @@ public class CrystalBallChance extends ChanceShopItem {
 
     @Override
     public String getDescription() {
-        return "Get a glance on your destiny. Do not destroy it...";
+        return "Get a glimpse of what fade may hold. But beware: truth and illusion often dance as one within its glow...";
     }
 }

@@ -10,6 +10,7 @@ import de.mario.roguelette.screens.GameOverScreen;
 import de.mario.roguelette.screens.YouWinScreen;
 import de.mario.roguelette.util.BetManager;
 import de.mario.roguelette.util.MathHelper;
+import de.mario.roguelette.util.MusicManager;
 import de.mario.roguelette.util.PendingChanceManager;
 import de.mario.roguelette.wheel.Segment;
 import de.mario.roguelette.wheel.Wheel;
@@ -22,6 +23,7 @@ public class GameState {
     private final Wheel wheel;
     private final BetManager betManager;
     private final Shop shop;
+    private final MusicManager musicManager;
 
     private final PendingChanceManager pendingChanceManager = new PendingChanceManager();
     private DeleteSegmentShopItem pendingDeleteItem = null;
@@ -44,27 +46,40 @@ public class GameState {
         SHOP_OPEN
     }
 
+    public interface TimeoutListener {
+        void onTimeout();
+    }
+
     private static class TimedState {
         GameStateMode mode;
         float remainingTime; // <= 0 -> no timer
+        TimeoutListener timeoutListener;
+
         TimedState(GameStateMode mode) {
             this(mode, -1);
         }
 
         TimedState(GameStateMode mode, float remainingTime) {
+            this(mode, remainingTime, null);
+        }
+
+        TimedState(GameStateMode mode, float remainingTime, TimeoutListener timeoutListener) {
             this.mode = mode;
             this.remainingTime = remainingTime;
+            this.timeoutListener = timeoutListener;
         }
     }
+
 
     // bottom: "main states", top: "overlay states"
     private final Deque<TimedState> stateStack = new ArrayDeque<>();
 
-    public GameState(final Player player, final Wheel wheel, final BetManager betManager, final Shop shop) {
+    public GameState(final Player player, final Wheel wheel, final BetManager betManager, final Shop shop, final MusicManager musicManager) {
         this.player = player;
         this.wheel = wheel;
         this.betManager = betManager;
         this.shop = shop;
+        this.musicManager = musicManager;
 
         this.stateStack.push(new TimedState(GameStateMode.DEFAULT));
     }
@@ -90,24 +105,45 @@ public class GameState {
         return pendingChanceManager;
     }
 
+    private void updateMusic() {
+        switch (getCurrentState()) {
+            case DEFAULT:
+                musicManager.setDefaultMode();
+                break;
+            case SHOP_OPEN:
+                musicManager.setShopMode();
+                break;
+            case SHOW_CRYSTAL_BALL:
+                musicManager.setCrystalBallMode(2.5f); // be fast here, as the crystal ball only appears for 2.5s
+                break;
+        }
+    }
+
     // state stack stuff
-    public void setState(GameStateMode state) {
+    public void setState(final GameStateMode state) {
         stateStack.clear();
         stateStack.push(new TimedState(state, -1));
+        updateMusic();
     }
 
-    public void pushState(GameStateMode state) {
-        stateStack.push(new TimedState(state, -1));
+    public void pushState(final GameStateMode state) {
+        pushState(state, -1);
     }
 
-    public void pushState(GameStateMode state, float duration) {
-        stateStack.push(new TimedState(state, duration));
+    public void pushState(final GameStateMode state, float duration) {
+        pushState(state, duration, null);
+    }
+
+    public void pushState(final GameStateMode state, float duration, final TimeoutListener timeoutListener) {
+        stateStack.push(new TimedState(state, duration, timeoutListener));
+        updateMusic();
     }
 
     public void popState() {
         if (stateStack.size() > 1) {
             stateStack.pop();
         }
+        updateMusic();
     }
 
     public GameStateMode getCurrentState() {
@@ -125,6 +161,9 @@ public class GameState {
             if (state.remainingTime > 0) {
                 state.remainingTime -= delta;
                 if (state.remainingTime <= 0) {
+                    if (state.timeoutListener != null) {
+                        state.timeoutListener.onTimeout();
+                    }
                     popState();
                 }
             }
@@ -171,9 +210,8 @@ public class GameState {
         this.pendingChanceItem = pendingChanceItem;
     }
 
-    public void activateCrystalBall(final Segment crystalBallSegment) {
+    public void setCrystalBallSegment(Segment crystalBallSegment) {
         this.crystalBallSegment = crystalBallSegment;
-        pushState(GameStateMode.SHOW_CRYSTAL_BALL, 2.5f);
     }
 
     public Segment getCrystalBallSegment() {

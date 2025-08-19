@@ -7,9 +7,11 @@ import com.badlogic.gdx.math.Rectangle;
 import de.mario.roguelette.GameState;
 import de.mario.roguelette.items.chances.ChanceShopItem;
 import de.mario.roguelette.render.Renderable;
+import de.mario.roguelette.render.TooltipRenderer;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class ActiveChanceEffectsRenderer implements Renderable {
 
@@ -17,6 +19,8 @@ public class ActiveChanceEffectsRenderer implements Renderable {
     private final SpriteBatch batch;
     private final BitmapFont font;
     private final Rectangle bounds;
+
+    private final TooltipRenderer tooltipRenderer;
 
     private final GameState gameState;
 
@@ -31,8 +35,18 @@ public class ActiveChanceEffectsRenderer implements Renderable {
         this.bounds = bounds;
         this.gameState = gameState;
 
+        this.tooltipRenderer = new TooltipRenderer(shapeRenderer, batch, font);
+        this.tooltipRenderer.setMaxWidth(bounds.width / 3f);
+
         this.drawLength = bounds.height;
         updateChances();
+    }
+
+    private void drawTooltip(final ChanceShopItem chance, float x, float y) {
+        tooltipRenderer.setTextHeader(chance.getShortDescription());
+        tooltipRenderer.setTextBody(chance.getDescription());
+        tooltipRenderer.setPosition(x, y);
+        tooltipRenderer.render();
     }
 
     public void updateChances() {
@@ -56,6 +70,24 @@ public class ActiveChanceEffectsRenderer implements Renderable {
     @Override
     public boolean contains(float x, float y) {
         return bounds.contains(x, y);
+    }
+
+    private Optional<ChanceShopItem> findChance(float x, float y) {
+        if (!contains(x, y)) {
+            return Optional.empty();
+        }
+
+        for (ChanceDraw cd : chanceDraws) {
+            if (cd.contains(x, y)) {
+                return Optional.of(cd.getItem());
+            }
+        }
+
+        return Optional.empty();
+    }
+
+    public void handleHover(float x, float y) {
+        findChance(x, y).ifPresent(chance -> drawTooltip(chance, x, y));
     }
 
     public float getDrawLength() {

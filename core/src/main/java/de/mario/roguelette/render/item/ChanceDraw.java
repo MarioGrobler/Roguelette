@@ -109,4 +109,8 @@ public class ChanceDraw implements Renderable {
     public void setDrawDuration(boolean drawDuration) {
         this.drawDuration = drawDuration;
     }
+
+    public ChanceShopItem getItem() {
+        return item;
+    }
 }

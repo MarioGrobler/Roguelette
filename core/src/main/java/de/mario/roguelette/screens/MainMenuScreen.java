@@ -43,6 +43,8 @@ public class MainMenuScreen implements Screen {
 
         handleInput();
 
+        game.getMusicManager().update(delta);
+
         float centerX = Gdx.graphics.getWidth() / 2f;
         float logoX = centerX - logoTexture.getWidth() / 2f;
         float logoY = 50;
