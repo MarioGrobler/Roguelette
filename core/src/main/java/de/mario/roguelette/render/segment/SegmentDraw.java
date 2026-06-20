@@ -22,6 +22,8 @@ public class SegmentDraw extends SegmentDrawBase {
     private final DecimalFormat df = new DecimalFormat("0.#");
     private Segment segment;
 
+    private static final Color BOTH_COLOR = new Color(0.6f, 0.2f, 0.7f, 1f); // Purple/magenta for "wild"
+
     private Color getDrawingColorFromSegment(final Segment segment) {
         if (segment == null) {
             return Color.PINK;
@@ -34,8 +36,8 @@ public class SegmentDraw extends SegmentDrawBase {
                 return Color.BLACK;
             case NONE:
                 return Color.FOREST;
-            case BOTH: //TODO: a more complex pattern here
-                return new Color(0.4f, 0f, 0f, 1);
+            case BOTH:
+                return BOTH_COLOR;
             default: // should be unreachable
                 return Color.PINK;
         }
@@ -78,51 +80,67 @@ public class SegmentDraw extends SegmentDrawBase {
             font.draw(batch, layout, 0, 0);
             batch.setTransformMatrix(new Matrix4()); // reset
 
-            // draw multiplier if it is not the identity
+            // draw multiplier badge if not identity
             if (segment.getCurrentMultiplier() != 1f) {
-                // add a golden shimmer (maybe later)
-//            Gdx.gl.glEnable(GL20.GL_BLEND);
-//            Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
-//            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-//            shapeRenderer.setColor(1, 1, 0, 0.3f);
-//            shapeRenderer.arc(centerX, centerY, outerRadius, startAngle + rotation, sweepAngle);
-//            shapeRenderer.end();
-//            Gdx.gl.glDisable(GL20.GL_BLEND);
-
-
-                float mulRadius = getInnerRadius() + (getOuterRadius() - getInnerRadius()) * 0.15f;
-                float mulX = getCenterX() + MathUtils.cosDeg(cAngle) * mulRadius;
-                float mulY = getCenterY() + MathUtils.sinDeg(cAngle) * mulRadius;
-                font.getData().setScale(1.2f);
-                GlyphLayout mulLayout = new GlyphLayout(font, df.format(segment.getCurrentMultiplier()) + "x", Color.BLACK, 0, Align.left, false);
-
-                float padding = 6f;
-
-                Matrix4 matrix = new Matrix4().idt()
-                    .translate(mulX, mulY, 0)
-                    .rotate(0, 0, 1, cAngle)
-                    .translate(0, mulLayout.height / 2, 0);
-
                 batch.end();
-                shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-                shapeRenderer.setTransformMatrix(matrix);
-                shapeRenderer.setColor(segment.getMultiplier() == segment.getCurrentMultiplier() ? mulBackground : mulBackgroundEx);
-                shapeRenderer.rect(-padding, -mulLayout.height - padding, mulLayout.width + 2 * padding, mulLayout.height + 2 * padding);
-                shapeRenderer.end();
-
-                shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-                shapeRenderer.setColor(segment.getMultiplier() == segment.getCurrentMultiplier() ? mulBorder : mulBorderEx);
-                shapeRenderer.rect(-padding, -mulLayout.height - padding, mulLayout.width + 2 * padding, mulLayout.height + 2 * padding);
-                shapeRenderer.setTransformMatrix(new Matrix4()); // reset
-                shapeRenderer.end();
-
+                renderMultiplierBadge(cAngle);
                 batch.begin();
-                batch.setTransformMatrix(matrix);
-                font.draw(batch, mulLayout, 0, 0);
-                batch.setTransformMatrix(new Matrix4()); // reset
             }
             batch.end();
         }
+    }
+
+    private void renderMultiplierBadge(float cAngle) {
+        // Position just above the inner edge of the segment, clear of the center hub
+        float mulRadius = getInnerRadius() + (getOuterRadius() - getInnerRadius()) * 0.22f;
+        float mulX = getCenterX() + MathUtils.cosDeg(cAngle) * mulRadius;
+        float mulY = getCenterY() + MathUtils.sinDeg(cAngle) * mulRadius;
+
+        font.getData().setScale(1.0f);
+        String mulText = "×" + df.format(segment.getCurrentMultiplier());
+        GlyphLayout mulLayout = new GlyphLayout(font, mulText, Color.WHITE, 0, Align.left, false);
+
+        float paddingX = 5f;
+        float paddingY = 3f;
+        float badgeWidth = mulLayout.width + 2 * paddingX;
+        float badgeHeight = mulLayout.height + 2 * paddingY;
+        float cornerRadius = 4f;
+
+        Matrix4 matrix = new Matrix4().idt()
+            .translate(mulX, mulY, 0)
+            .rotate(0, 0, 1, cAngle);
+
+        // Choose colors - more subtle, less saturated
+        Color bgColor = (segment.getMultiplier() == segment.getCurrentMultiplier())
+            ? new Color(0.75f, 0.65f, 0.2f, 0.75f)   // Muted gold, more transparent
+            : new Color(0.7f, 0.3f, 0.2f, 0.75f);    // Muted red-orange for modified
+
+        // Draw rounded badge background
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setTransformMatrix(matrix);
+        shapeRenderer.setColor(bgColor);
+
+        // Center rectangle
+        float halfW = badgeWidth / 2;
+        float halfH = badgeHeight / 2;
+        shapeRenderer.rect(-halfW + cornerRadius, -halfH, badgeWidth - 2 * cornerRadius, badgeHeight);
+        shapeRenderer.rect(-halfW, -halfH + cornerRadius, badgeWidth, badgeHeight - 2 * cornerRadius);
+
+        // Corner circles
+        shapeRenderer.circle(-halfW + cornerRadius, -halfH + cornerRadius, cornerRadius);
+        shapeRenderer.circle(halfW - cornerRadius, -halfH + cornerRadius, cornerRadius);
+        shapeRenderer.circle(-halfW + cornerRadius, halfH - cornerRadius, cornerRadius);
+        shapeRenderer.circle(halfW - cornerRadius, halfH - cornerRadius, cornerRadius);
+
+        shapeRenderer.setTransformMatrix(new Matrix4());
+        shapeRenderer.end();
+
+        // Draw text - properly centered
+        batch.begin();
+        batch.setTransformMatrix(matrix);
+        font.draw(batch, mulLayout, -badgeWidth / 2 + paddingX, mulLayout.height / 2);
+        batch.setTransformMatrix(new Matrix4());
+        batch.end();
     }
 
     public void setSegment(Segment segment) {

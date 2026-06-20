@@ -32,8 +32,7 @@ public class MainMenuScreen implements Screen {
     public void show() {
         batch = new SpriteBatch();
         logoTexture = new Texture(Gdx.files.internal("logo/banner.png"));
-        font = new BitmapFont();
-        font.getData().setScale(2f);
+        font = game.getFontManager().getMedium();
         layout = new GlyphLayout(font, "Press the ENTER key", Color.WHITE, 0, Align.center, false);
     }
 
@@ -79,7 +78,7 @@ public class MainMenuScreen implements Screen {
     public void dispose() {
         batch.dispose();
         logoTexture.dispose();
-        font.dispose();
+        // font is managed by RougeletteGame.fontManager
     }
 
     private void handleInput() {

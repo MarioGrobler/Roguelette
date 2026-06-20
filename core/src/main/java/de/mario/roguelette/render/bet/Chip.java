@@ -1,6 +1,8 @@
 package de.mario.roguelette.render.bet;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -55,12 +57,18 @@ public class Chip implements Renderable {
     @Override
     public void render() {
         // to grayscale if unavailable
-        if (!available) {
-            color = ColorHelper.grayscale(color);
-        }
-        Color darkColor = ColorHelper.darken(color);
+        Color renderColor = available ? color : ColorHelper.grayscale(color);
+        Color darkColor = ColorHelper.darken(renderColor);
 
-        // border
+        // Drop shadow
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(new Color(0, 0, 0, 0.3f));
+        shapeRenderer.circle(bounds.x + 2, bounds.y - 2, bounds.radius);
+        shapeRenderer.end();
+
+        // border - thick alternating segments (poker chip look)
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         int alt = 12;
         float anglePerAlt = 360f / alt;
@@ -71,25 +79,38 @@ public class Chip implements Renderable {
             shapeRenderer.arc(bounds.x, bounds.y, bounds.radius, angle, anglePerAlt, 5);
         }
 
-        // middle part
-        shapeRenderer.setColor(color);
-        shapeRenderer.circle(bounds.x, bounds.y, bounds.radius - thickness);
+        // middle part with subtle radial gradient
+        float innerRadius = bounds.radius - thickness;
+        Color edgeColor = ColorHelper.darken(renderColor, 0.1f);
+        Color centerColor = ColorHelper.lighten(renderColor, 0.05f);
+
+        int layers = 6;
+        for (int i = 0; i < layers; i++) {
+            float t = (float) i / (layers - 1);
+            Color layerColor = new Color(
+                lerp(edgeColor.r, centerColor.r, t),
+                lerp(edgeColor.g, centerColor.g, t),
+                lerp(edgeColor.b, centerColor.b, t),
+                1f
+            );
+            shapeRenderer.setColor(layerColor);
+            float radius = lerp(innerRadius, innerRadius * 0.2f, t);
+            shapeRenderer.circle(bounds.x, bounds.y, radius);
+        }
         shapeRenderer.end();
-//        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-//        shapeRenderer.setColor(Color.WHITE);
-//        shapeRenderer.circle(bounds.x, bounds.y, bounds.radius);
-//        //shapeRenderer.circle(bounds.x, bounds.y, bounds.radius - thickness);
-//        shapeRenderer.end();
+        Gdx.gl.glDisable(GL20.GL_BLEND);
 
         // value
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         batch.begin();
         font.getData().setScale(fontScale);
         font.setColor(Color.WHITE);
         GlyphLayout layout = new GlyphLayout(font, getLabel());
         font.draw(batch, layout, bounds.x - layout.width / 2, bounds.y + layout.height / 2);
         batch.end();
-        shapeRenderer.end();
+    }
+
+    private float lerp(float a, float b, float t) {
+        return a + (b - a) * t;
     }
 
     public int getBase() {

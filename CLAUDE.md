@@ -94,3 +94,90 @@ amount × (base_multiplier + chance_base) × segment_multiplier × fortune_total
 - gdx-controllers 2.2.3
 - Gradle 8.14.1
 - construo plugin 1.7.1 (bundled JDK packaging)
+
+## Session Notes & Screenshots
+
+Development session notes are stored in `.claude/notes/` with detailed summaries of work done.
+Screenshots documenting progress are in `.claude/screenshots/` with timestamp filenames (YYYY-MM-DD-HH-MM.png).
+
+**Latest session:** `2026-06-20-graphics-polish-session.md` - Major graphics overhaul including:
+- FreeType fonts (Montserrat Bold)
+- Gradient backgrounds, UI elements, segments, chips
+- Drop shadows throughout
+- Improved wheel rendering (rim, center hub)
+- Remaining issues documented for continuation
+
+## Current State / Next Ideas
+
+### 1. More Items
+
+**Chances (single-use actives):**
+- Reroll: refresh shop inventory
+- Insurance: refund bet on loss
+- Freeze: lock a segment as guaranteed landing
+- Lucky Seven: all 7s on wheel pay triple
+- Ricochet: if ball lands on 0, bounce to random non-zero
+
+**Fortunes (passives):**
+- Interest: earn % of balance between rounds
+- Streak Bonus: consecutive wins increase multiplier
+- Bargain Hunter: shop discount
+- Deep Pockets: extra inventory slots
+- Comeback Kid: bonus multiplier when balance is low
+
+**Segments:**
+- Multiplier segments (2x, 3x on landing)
+- Wild segments (count as both red and black)
+- Multi-number segments (cover 2-3 adjacent numbers)
+- Trap segments (risk/reward - high multiplier but lose extra on miss)
+
+**Ball Modifiers (new system):**
+- Double Ball: two outcomes per spin, both pay out
+- Magnetic Ball: bias toward certain colors
+- Ghost Ball: phases through first segment, lands on second
+- Heavy Ball: tends toward adjacent segments after bounce
+
+### 2. Graphics Polish
+
+**Completed (2026-06-20):**
+- FreeType fonts (Montserrat Bold) via FontManager
+- Background gradient (radial vignette)
+- RoundedRects: shadows, gradients, highlights
+- Wheel segments: radial gradients, purple for BOTH
+- Multiplier badges: rounded pill shape, subtle colors
+- Wheel: outer rim gradient, center hub gradient, ball shadow
+- Betting cells: vertical gradients
+- Chips: shadows, subtle center gradient
+- Fortune items: shadows, gradients
+
+**Remaining:**
+- Fix wheel center hub / segment overlap issue
+- Particle effects: win celebrations, ball trails
+- Shaders: glow effects, screen transitions
+- Animated items in shop/inventory
+- Sound design (no sound effects currently)
+
+### 3. Meta-Progression (Roguelite Elements)
+
+**Characters (Balatro-style):**
+- High Roller: starts $500, higher stage goals
+- Lucky: starts with a random Fortune
+- Collector: 7 inventory slots instead of 5
+- Risk Taker: all payouts ±50% variance
+
+**Unlocks:**
+- New items unlocked by achievements
+- Characters unlocked by completing runs
+- Cosmetic wheel/chip themes
+
+**Achievements:**
+- Win on specific numbers (hit 17 three times)
+- Reach balance milestones ($10k, $100k, $1M)
+- Win X rounds in a row
+- Complete run with specific item combos
+- Complete run without using shop
+
+**Game Modes:**
+- Daily Challenge: seeded run, leaderboard
+- Endless: no win condition, how far can you go?
+- Challenge Runs: modifiers (no fortunes, double prices, etc.)

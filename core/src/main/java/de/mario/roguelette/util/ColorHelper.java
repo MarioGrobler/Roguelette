@@ -4,16 +4,29 @@ import com.badlogic.gdx.graphics.Color;
 
 public class ColorHelper {
     public static Color darken(final Color color) {
-        return new Color(color.r * 0.7f, color.g * 0.7f, color.b * 0.7f, color.a);
+        return darken(color, 0.3f);
+    }
+
+    public static Color darken(final Color color, float amount) {
+        float factor = 1f - amount;
+        return new Color(color.r * factor, color.g * factor, color.b * factor, color.a);
     }
 
     public static Color lighten(final Color color) {
+        return lighten(color, 0.3f);
+    }
+
+    public static Color lighten(final Color color, float amount) {
         float diffR = 1f - color.r;
         float diffG = 1f - color.g;
         float diffB = 1f - color.b;
-        float diffA = 1f - color.a;
 
-        return new Color(color.r + diffR * 0.3f, color.g + diffG * 0.3f, color.b + diffB * 0.3f, color.a + diffA * 0.3f);
+        return new Color(
+            color.r + diffR * amount,
+            color.g + diffG * amount,
+            color.b + diffB * amount,
+            color.a
+        );
     }
 
     public static Color grayscale(final Color color) {

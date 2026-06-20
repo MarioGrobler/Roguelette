@@ -61,6 +61,14 @@ public abstract class SegmentDrawBase implements Renderable {
         segmentShapeRenderer.setColor(color);
     }
 
+    public Color getSecondaryColor() {
+        return segmentShapeRenderer.getSecondaryColor();
+    }
+
+    public void setSecondaryColor(Color color) {
+        segmentShapeRenderer.setSecondaryColor(color);
+    }
+
     /**
      * @return the outline color or <code>null</code> if the outline is disabled. Default value is <code>null</code>.
      */

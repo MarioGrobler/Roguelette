@@ -8,6 +8,7 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Circle;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.utils.Align;
+import de.mario.roguelette.util.ColorHelper;
 
 public abstract class RectRegion extends BetRegion {
     protected Rectangle bounds;
@@ -24,11 +25,28 @@ public abstract class RectRegion extends BetRegion {
 
     @Override
     public void render() {
-
-        // draw field
+        // draw field with gradient (darker at bottom, lighter at top)
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        shapeRenderer.setColor(color);
-        shapeRenderer.rect(bounds.x, bounds.y, bounds.width, bounds.height);
+
+        Color darkColor = ColorHelper.darken(color, 0.2f);
+        Color lightColor = ColorHelper.lighten(color, 0.1f);
+
+        float targetStripHeight = 4f;
+        int strips = Math.max(2, (int) Math.ceil(bounds.height / targetStripHeight));
+        float stripHeight = bounds.height / strips;
+
+        for (int i = 0; i < strips; i++) {
+            float t = (float) i / (strips - 1);
+            Color stripColor = new Color(
+                lerp(darkColor.r, lightColor.r, t),
+                lerp(darkColor.g, lightColor.g, t),
+                lerp(darkColor.b, lightColor.b, t),
+                1f
+            );
+            shapeRenderer.setColor(stripColor);
+            float y = bounds.y + i * stripHeight;
+            shapeRenderer.rect(bounds.x, y, bounds.width, stripHeight + 0.5f);
+        }
         shapeRenderer.end();
 
         // draw outline
@@ -50,6 +68,10 @@ public abstract class RectRegion extends BetRegion {
         if (chip != null) {
             chip.render();
         }
+    }
+
+    private float lerp(float a, float b, float t) {
+        return a + (b - a) * t;
     }
 
     @Override

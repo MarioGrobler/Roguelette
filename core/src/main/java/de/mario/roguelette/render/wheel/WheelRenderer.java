@@ -132,23 +132,14 @@ public class WheelRenderer implements Renderable {
         int segmentCount = gameState.getWheel().size();
         float rotationAngle = wheelAnimator.getRotationAngle();
 
-        //render outer ring
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        shapeRenderer.setColor(Color.BROWN);
-        shapeRenderer.circle(centerX, centerY, outerRadius);
-        shapeRenderer.end();
+        // Render outer rim with gradient (darker outside, lighter inside)
+        renderOuterRim();
 
-        Gdx.gl.glEnable(GL20.GL_BLEND);
-        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        // Render decorative gold ring at segment edge
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        for (int i = 0; i < 20; i++) {
-            float r = outerRadius - i * (outerRadius - wheelRadius) / 20;
-            float alpha = 0.05f + 0.05f * (1f - i / 20f);
-            shapeRenderer.setColor(new Color(0,0,0, alpha));
-            shapeRenderer.circle(centerX, centerY, r);
-        }
+        shapeRenderer.setColor(new Color(0.85f, 0.7f, 0.3f, 1f));
+        shapeRenderer.circle(centerX, centerY, wheelRadius + 4);
         shapeRenderer.end();
-        Gdx.gl.glDisable(GL20.GL_BLEND);
 
         // render segments
         for (SegmentDraw sd : segmentDraws) {
@@ -164,37 +155,119 @@ public class WheelRenderer implements Renderable {
             float x = centerX + MathUtils.cos(rad) * wheelRadius;
             float y = centerY + MathUtils.sin(rad) * wheelRadius;
 
-            shapeRenderer.setColor(Color.GOLDENROD);
+            shapeRenderer.setColor(new Color(0.85f, 0.7f, 0.3f, 1f));
             shapeRenderer.rectLine(centerX, centerY, x, y, 2);
         }
         shapeRenderer.end();
 
+        // Render center hub with gradient
+        renderCenterHub();
 
-        // render center
+        // draw ball with slight shadow
+        renderBall();
+
+
+    }
+
+    private void renderOuterRim() {
+        // Draw gradient rim from dark (outer) to lighter (inner)
+        float rimThickness = outerRadius - wheelRadius - 4; // -4 for gold ring
+        float targetLayerThickness = 4f;
+        int layers = Math.max(2, (int) Math.ceil(rimThickness / targetLayerThickness));
+        float layerThickness = rimThickness / layers;
+
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        shapeRenderer.setColor(Color.GOLDENROD);
-        shapeRenderer.circle(centerX, centerY, innerRadius);
+        for (int i = 0; i < layers; i++) {
+            float t = (float) i / (layers - 1);
+            // Dark brown at outer edge, lighter brown at inner edge
+            float r = lerp(0.25f, 0.5f, t);
+            float g = lerp(0.12f, 0.3f, t);
+            float b = lerp(0.08f, 0.2f, t);
+            shapeRenderer.setColor(new Color(r, g, b, 1f));
+
+            float radius = outerRadius - i * layerThickness;
+            shapeRenderer.circle(centerX, centerY, radius);
+        }
         shapeRenderer.end();
 
-
-        // draw ball
+        // Add shadow/depth at inner edge of rim (3D effect)
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        shapeRenderer.setColor(Color.WHITE);
-        shapeRenderer.circle(ballAnimator.getX(centerX), ballAnimator.getY(centerY), ballRadius);
+        for (int i = 0; i < 10; i++) {
+            float alpha = 0.12f * (1f - i / 10f);
+            shapeRenderer.setColor(new Color(0, 0, 0, alpha));
+            shapeRenderer.circle(centerX, centerY, wheelRadius + 6 + i * 2);
+        }
+        shapeRenderer.end();
+        Gdx.gl.glDisable(GL20.GL_BLEND);
+    }
+
+    private void renderCenterHub() {
+        // The segments reach down to innerRadius*0.99 (see createSegmentDraw). Keep the
+        // hub clearly inside that so it never covers the multiplier badges, and frame it
+        // with a gold ring that mirrors the decorative ring at the outer segment edge.
+        float segInnerRadius = innerRadius * 0.99f;
+        float ringWidth = 5f;
+        float hubRadius = segInnerRadius - ringWidth;
+
+        // Gold ring border at the inner segment edge
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(new Color(0.85f, 0.7f, 0.3f, 1f));
+        shapeRenderer.circle(centerX, centerY, segInnerRadius);
         shapeRenderer.end();
 
+        // Simple gradient hub - darker at edge, lighter at center (like RoundedRects)
+        float targetLayerThickness = 4f;
+        int layers = Math.max(2, (int) Math.ceil(hubRadius / targetLayerThickness));
 
-        // draw current segment
-//        batch.begin();
-//        batch.setTransformMatrix(batch.getTransformMatrix().idt());
-//        font.setColor(Color.WHITE);
-//        font.draw(batch, "Current number: " + getCurrentSegment(ballAnimator.getRotationAngle()).getDisplayText(), 50, 50);
-//        batch.end();
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        for (int i = 0; i < layers; i++) {
+            float t = (float) i / (layers - 1);
+            // Warm gold gradient - darker bronze at edge, brighter gold at center
+            float r = lerp(0.6f, 0.95f, t);
+            float g = lerp(0.4f, 0.7f, t);
+            float b = lerp(0.15f, 0.25f, t);
+            shapeRenderer.setColor(new Color(r, g, b, 1f));
 
-//        if (gameState.getMode() == GameState.GameStateMode.SPINNING) {
-//            lightshow(centerX - outerRadius, centerY + outerRadius, ballAnimator.getX(centerX), ballAnimator.getY(centerY), outerRadius / 2);
-//            lightshow(centerX + outerRadius, centerY + outerRadius, ballAnimator.getX(centerX), ballAnimator.getY(centerY), outerRadius / 2);
-//        }
+            float radius = hubRadius * (1f - t * 0.95f) + hubRadius * 0.05f;
+            shapeRenderer.circle(centerX, centerY, radius);
+        }
+        shapeRenderer.end();
+    }
+
+    private void renderBall() {
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+
+        float ballX = ballAnimator.getX(centerX);
+        float ballY = ballAnimator.getY(centerY);
+
+        // Ball shadow
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(new Color(0, 0, 0, 0.3f));
+        shapeRenderer.circle(ballX + 2, ballY - 2, ballRadius);
+        shapeRenderer.end();
+
+        // Ball with gradient (white to light gray)
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        for (int i = 5; i >= 0; i--) {
+            float t = (float) i / 5f;
+            float c = lerp(1f, 0.85f, t);
+            shapeRenderer.setColor(new Color(c, c, c, 1f));
+            shapeRenderer.circle(ballX, ballY, ballRadius * (1f - t * 0.2f));
+        }
+
+        // Highlight on ball
+        shapeRenderer.setColor(new Color(1f, 1f, 1f, 0.9f));
+        shapeRenderer.circle(ballX - ballRadius * 0.3f, ballY + ballRadius * 0.3f, ballRadius * 0.25f);
+        shapeRenderer.end();
+
+        Gdx.gl.glDisable(GL20.GL_BLEND);
+    }
+
+    private float lerp(float a, float b, float t) {
+        return a + (b - a) * t;
     }
 
     public void lightshow(float originX, float originY, float centerX, float centerY, float radius) {

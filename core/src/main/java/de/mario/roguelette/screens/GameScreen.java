@@ -6,6 +6,7 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
@@ -24,6 +25,7 @@ import de.mario.roguelette.items.chances.ChanceShopItem;
 import de.mario.roguelette.items.chances.WheelSelectChance;
 import de.mario.roguelette.items.segments.AddSegmentShopItem;
 import de.mario.roguelette.items.segments.DeleteSegmentShopItem;
+import de.mario.roguelette.render.BackgroundRenderer;
 import de.mario.roguelette.render.bet.BettingAreaRenderer;
 import de.mario.roguelette.render.bet.ChipRenderer;
 import de.mario.roguelette.render.item.ActiveChanceEffectsRenderer;
@@ -50,6 +52,7 @@ public class GameScreen implements Screen {
     private SpriteBatch batch;
     private BitmapFont font;
 
+    private BackgroundRenderer backgroundRenderer;
     private WheelRenderer wheelRenderer;
     private BettingAreaRenderer bettingAreaRenderer;
     private ChipRenderer chipRenderer;
@@ -80,7 +83,8 @@ public class GameScreen implements Screen {
 
         shapeRenderer = new ShapeRenderer();
         batch = new SpriteBatch();
-        font = new BitmapFont();
+        backgroundRenderer = new BackgroundRenderer();
+        font = game.getFontManager().getDefault();
         font.getData().setScale(1.5f);
 
         float wheelRadius = Gdx.graphics.getHeight() / 3f;
@@ -138,11 +142,14 @@ public class GameScreen implements Screen {
 
     @Override
     public void render(float delta) {
-        ScreenUtils.clear(0.15f, 0.15f, 0.2f, 1f);
+        ScreenUtils.clear(0, 0, 0, 1f);
 
         font.getData().setScale(1.5f);
         shapeRenderer.setProjectionMatrix(camera.combined);
         batch.setProjectionMatrix(camera.combined);
+
+        // render gradient background
+        backgroundRenderer.render(batch);
 
         // update everything
         gameState.update(delta);
@@ -173,8 +180,12 @@ public class GameScreen implements Screen {
         batch.begin();
         font.setColor(Color.WHITE);
         font.getData().setScale(3f);
-        font.draw(batch, "Balance: $" + gameState.getBalanceMinusBets(), 20, Gdx.graphics.getHeight() - 20);
-        font.draw(batch, "Goal: $" + gameState.getRequiredChips(), 444, Gdx.graphics.getHeight() - 20);
+        String balanceText = "Balance: $" + gameState.getBalanceMinusBets();
+        font.draw(batch, balanceText, 20, Gdx.graphics.getHeight() - 20);
+        // Position Goal after Balance with spacing
+        GlyphLayout balanceLayout = new GlyphLayout(font, balanceText);
+        float goalX = 20 + balanceLayout.width + 40; // 40px spacing
+        font.draw(batch, "Goal: $" + gameState.getRequiredChips(), goalX, Gdx.graphics.getHeight() - 20);
         font.getData().setScale(2f);
         String s = gameState.isStateInStack(GameState.GameStateMode.SHOP_OPEN) ? "Shopping Time!" : String.format("Stage: %d, Round %d/%d", gameState.getCurrentStage(), gameState.getCurrentRound(), gameState.getRoundsInStage());
         font.draw(batch, s, 20, Gdx.graphics.getHeight() - 70);
@@ -220,7 +231,8 @@ public class GameScreen implements Screen {
     public void dispose() {
         shapeRenderer.dispose();
         batch.dispose();
-        font.dispose();
+        backgroundRenderer.dispose();
+        // font is managed by RougeletteGame.fontManager
     }
 
     private void handleInputChanceSegmentSelecting() {
