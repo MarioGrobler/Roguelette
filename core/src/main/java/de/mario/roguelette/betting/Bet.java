@@ -1,8 +1,7 @@
 package de.mario.roguelette.betting;
 
 import de.mario.roguelette.GameState;
-import de.mario.roguelette.items.chances.PendingChanceShopItem;
-import de.mario.roguelette.items.fortunes.FortuneShopItem;
+import de.mario.roguelette.events.BetResolution;
 import de.mario.roguelette.wheel.Segment;
 
 public class Bet {
@@ -19,26 +18,21 @@ public class Bet {
     }
 
     /**
-     * @return the payout for this bet according to the following formula:
-     * amount * (base multiplier + chance base modifiers) * segment multiplier * chance total modifiers
+     * @return the payout for this bet. On a win, the payout follows the formula
+     * <pre>amount * (base multiplier + listener base modifiers) * segment multiplier * listener total modifiers</pre>
+     * On a loss, listeners (e.g. Insurance) may refund part of the stake; the refund is capped at
+     * the full stake.
      */
     public float getPayout(final Segment landed, final GameState gameState) {
-        if (isWin(landed)) {
-            // compute all payout modifiers
-            float base = betType.getPayoutMultiplier();
-            float totalMultiplier = 1f;
-            for (FortuneShopItem fortune : gameState.getPlayer().getInventory().getFortunes()) {
-                base += fortune.baseModifier(this);
-                totalMultiplier *= fortune.totalModifier(this);
-            }
-            for (PendingChanceShopItem chance : gameState.getPendingChanceManager().getActiveChances()) {
-                base += chance.baseModifier(this);
-                totalMultiplier *= chance.totalModifier(this);
-            }
+        boolean win = isWin(landed);
+        BetResolution resolution = new BetResolution(this, landed, win);
+        gameState.dispatchResolveBet(resolution);
 
-            return amount * base * landed.getCurrentMultiplier() * totalMultiplier;
+        if (win) {
+            float base = betType.getPayoutMultiplier() + resolution.getBaseAdd();
+            return amount * base * landed.getCurrentMultiplier() * resolution.getTotalMul();
         }
-        return 0;
+        return amount * Math.min(1f, resolution.getRefundFraction());
     }
 
     public BetType getBetType() {

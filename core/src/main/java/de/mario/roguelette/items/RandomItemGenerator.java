@@ -4,7 +4,10 @@ import com.badlogic.gdx.math.MathUtils;
 import de.mario.roguelette.items.chances.ChanceShopItem;
 import de.mario.roguelette.items.chances.CrystalBallChance;
 import de.mario.roguelette.items.chances.DoubleNextWinChance;
+import de.mario.roguelette.items.chances.InsuranceChance;
+import de.mario.roguelette.items.chances.LuckySevenChance;
 import de.mario.roguelette.items.chances.MirrorFateChance;
+import de.mario.roguelette.items.chances.RicochetChance;
 import de.mario.roguelette.items.fortunes.FortuneShopItem;
 import de.mario.roguelette.items.fortunes.LightningStormFortune;
 import de.mario.roguelette.items.fortunes.PaintItBlackFortune;
@@ -18,6 +21,7 @@ import de.mario.roguelette.wheel.NumberSegment;
 import de.mario.roguelette.wheel.Segment;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 //TODO
@@ -92,14 +96,20 @@ public class RandomItemGenerator {
     }
 
 
+    private static final int CHANCES_PER_RESTOCK = 3;
+
     public List<ChanceShopItem> generateChances() {
-        List<ChanceShopItem> chances = new ArrayList<>();
+        List<ChanceShopItem> pool = new ArrayList<>();
 
-        chances.add(new DoubleNextWinChance());
-        chances.add(new CrystalBallChance());
-        chances.add(new MirrorFateChance());
+        pool.add(new DoubleNextWinChance());
+        pool.add(new CrystalBallChance());
+        pool.add(new MirrorFateChance());
+        pool.add(new InsuranceChance());
+        pool.add(new LuckySevenChance());
+        pool.add(new RicochetChance());
 
-        return chances;
+        Collections.shuffle(pool);
+        return new ArrayList<>(pool.subList(0, Math.min(CHANCES_PER_RESTOCK, pool.size())));
     }
 
     public List<FortuneShopItem> generateFortunes() {

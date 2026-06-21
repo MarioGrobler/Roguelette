@@ -5,7 +5,6 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.MathUtils;
 import de.mario.roguelette.GameState;
-import de.mario.roguelette.betting.Bet;
 import de.mario.roguelette.wheel.Segment;
 import de.mario.roguelette.wheel.effects.MultiplierEffect;
 
@@ -20,16 +19,6 @@ public class ScarletSurgeFortune extends FortuneShopItem{
         int rnd = MathUtils.random(gameState.getWheel().size() - 1);
         gameState.getWheel().getSegmentAt(rnd).setColor(Segment.SegmentColor.RED);
         gameState.getWheel().getSegmentAt(rnd).addEffect(new MultiplierEffect(1, 9));
-    }
-
-    @Override
-    public float baseModifier(final Bet bet) {
-        return 0; // no change
-    }
-
-    @Override
-    public float totalModifier(final Bet bet) {
-        return 1; // no change
     }
 
     @Override

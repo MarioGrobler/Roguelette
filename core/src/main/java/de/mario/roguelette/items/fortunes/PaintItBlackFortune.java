@@ -5,8 +5,8 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.MathUtils;
 import de.mario.roguelette.GameState;
-import de.mario.roguelette.betting.Bet;
 import de.mario.roguelette.betting.ColorBet;
+import de.mario.roguelette.events.BetResolution;
 import de.mario.roguelette.wheel.Segment;
 
 import java.util.ArrayList;
@@ -39,16 +39,14 @@ public class PaintItBlackFortune extends FortuneShopItem {
     }
 
     @Override
-    public float baseModifier(final Bet bet) {
-        if (bet.getBetType() instanceof ColorBet && ((ColorBet) bet.getBetType()).getSegmentColor() == Segment.SegmentColor.BLACK) {
-            return blackModifier;
+    public void onResolveBet(final GameState gameState, final BetResolution resolution) {
+        if (!resolution.isWin()) {
+            return;
         }
-        return 0;
-    }
-
-    @Override
-    public float totalModifier(final Bet bet) {
-        return 1; // no change
+        if (resolution.getBet().getBetType() instanceof ColorBet
+            && ((ColorBet) resolution.getBet().getBetType()).getSegmentColor() == Segment.SegmentColor.BLACK) {
+            resolution.addBase(blackModifier);
+        }
     }
 
     @Override

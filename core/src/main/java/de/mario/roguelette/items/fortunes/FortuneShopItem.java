@@ -3,10 +3,10 @@ package de.mario.roguelette.items.fortunes;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import de.mario.roguelette.GameState;
-import de.mario.roguelette.betting.Bet;
+import de.mario.roguelette.events.GameEventListener;
 import de.mario.roguelette.items.ShopItem;
 
-public abstract class FortuneShopItem extends ShopItem {
+public abstract class FortuneShopItem extends ShopItem implements GameEventListener {
 
     public static class FortuneRenderInfo {
         private final Texture backgrund;
@@ -59,15 +59,6 @@ public abstract class FortuneShopItem extends ShopItem {
         gameState.getPlayer().getInventory().addFortune(this);
     }
 
-    public abstract void onTurnChange(final GameState gameState);
-
-    /**
-     * Returns an additive factor that is added to the given bets bet type base multiplier.
-     */
-    public abstract float baseModifier(final Bet bet);
-
-    /**
-     * Returns a multiplicative factor that is applied at the end
-     */
-    public abstract float totalModifier(final Bet bet);
+    // Payout and turn-change effects are provided through the GameEventListener hooks
+    // (onResolveBet, onTurnChange). Subclasses override only the hooks they need.
 }

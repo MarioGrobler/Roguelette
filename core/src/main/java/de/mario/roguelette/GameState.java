@@ -1,10 +1,11 @@
 package de.mario.roguelette;
 
+import de.mario.roguelette.events.BetResolution;
+import de.mario.roguelette.events.GameEventListener;
+import de.mario.roguelette.events.LandingContext;
 import de.mario.roguelette.items.Shop;
 import de.mario.roguelette.items.chances.ChanceShopItem;
-import de.mario.roguelette.items.chances.PendingChanceShopItem;
 import de.mario.roguelette.items.chances.WheelSelectChance;
-import de.mario.roguelette.items.fortunes.FortuneShopItem;
 import de.mario.roguelette.items.segments.DeleteSegmentShopItem;
 import de.mario.roguelette.screens.GameOverScreen;
 import de.mario.roguelette.screens.YouWinScreen;
@@ -16,7 +17,9 @@ import de.mario.roguelette.wheel.Segment;
 import de.mario.roguelette.wheel.Wheel;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
+import java.util.List;
 
 public class GameState {
     private final Player player;
@@ -180,16 +183,45 @@ public class GameState {
     }
 
     /**
+     * Collects all currently active event listeners: the owned fortunes followed by the active
+     * pending chances. Fortunes are listed first so their effects resolve before chances.
+     */
+    private List<GameEventListener> collectListeners() {
+        List<GameEventListener> listeners = new ArrayList<>();
+        listeners.addAll(player.getInventory().getFortunes());
+        listeners.addAll(pendingChanceManager.getActiveChances());
+        return listeners;
+    }
+
+    /** Fired right before the wheel and ball start spinning. */
+    public void dispatchSpinStart() {
+        for (GameEventListener listener : collectListeners()) {
+            listener.onSpinStart(this);
+        }
+    }
+
+    /** Fired once the landing has been rolled; listeners may override it via the context. */
+    public void dispatchBallLanded(final LandingContext landing) {
+        for (GameEventListener listener : collectListeners()) {
+            listener.onBallLanded(this, landing);
+        }
+    }
+
+    /** Fired for a single bet during resolution; listeners contribute payout modifiers/refunds. */
+    public void dispatchResolveBet(final BetResolution resolution) {
+        for (GameEventListener listener : collectListeners()) {
+            listener.onResolveBet(this, resolution);
+        }
+    }
+
+    /**
      * Activates all <code>onTurnChange</code> effects.
      * Afterwards, removes all expired chances from the active chance list.
      */
     public void applyOnTurnChangeEffects() {
         getWheel().onTurnChange();
-        for (FortuneShopItem item : player.getInventory().getFortunes()) {
-            item.onTurnChange(this);
-        }
-        for (PendingChanceShopItem item : pendingChanceManager.getActiveChances()) {
-            item.onTurnChange(this);
+        for (GameEventListener listener : collectListeners()) {
+            listener.onTurnChange(this);
         }
         pendingChanceManager.removeDeadChances();
     }

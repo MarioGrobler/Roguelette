@@ -18,6 +18,7 @@ import de.mario.roguelette.Player;
 import de.mario.roguelette.RougeletteGame;
 import de.mario.roguelette.betting.Bet;
 import de.mario.roguelette.betting.BetType;
+import de.mario.roguelette.events.LandingContext;
 import de.mario.roguelette.items.Inventory;
 import de.mario.roguelette.items.Shop;
 import de.mario.roguelette.items.ShopItem;
@@ -318,6 +319,16 @@ public class GameScreen implements Screen {
                     selectAngle = optStartAngle.get() + 1f; // +1 because checking exactly on the border can lead to selecting a neighbor
                 }
             }
+
+            // event layer: notify listeners of the spin and let them override where the ball lands
+            // (e.g. Freeze forces a segment, Ricochet bounces off zero, ball modifiers, ...)
+            gameState.dispatchSpinStart();
+            LandingContext landing = new LandingContext(gameState.getWheel(), wheelRenderer.getCurrentSegmentIndex(selectAngle));
+            gameState.dispatchBallLanded(landing);
+            if (landing.wasChanged()) {
+                selectAngle = wheelRenderer.getSelectAngleForIndex(landing.getSegmentIndex());
+            }
+
             Segment segment = wheelRenderer.getCurrentSegment(selectAngle);
 
 

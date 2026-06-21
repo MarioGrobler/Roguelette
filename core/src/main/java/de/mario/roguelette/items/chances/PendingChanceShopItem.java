@@ -1,28 +1,19 @@
 package de.mario.roguelette.items.chances;
 
 import de.mario.roguelette.GameState;
-import de.mario.roguelette.betting.Bet;
+import de.mario.roguelette.events.GameEventListener;
 
 /**
- * A chance item whose effect lasts for some time after activation
+ * A chance item whose effect lasts for some time after activation. Its effect is expressed
+ * through the {@link GameEventListener} hooks (e.g. onResolveBet, onBallLanded).
  */
-public abstract class PendingChanceShopItem extends ChanceShopItem {
+public abstract class PendingChanceShopItem extends ChanceShopItem implements GameEventListener {
 
     protected int duration = 1; // duration in rounds
 
     protected PendingChanceShopItem(ChanceRenderInfo renderInfo) {
         super(renderInfo);
     }
-
-    /**
-     * Returns an additive factor that is added to the given bets bet type base multiplier.
-     */
-    public abstract float baseModifier(final Bet bet);
-
-    /**
-     * Returns a multiplicative factor that is applied at the end
-     */
-    public abstract float totalModifier(final Bet bet);
 
     public int getDuration() {
         return duration;

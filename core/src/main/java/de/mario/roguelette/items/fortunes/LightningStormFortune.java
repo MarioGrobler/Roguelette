@@ -5,7 +5,6 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.MathUtils;
 import de.mario.roguelette.GameState;
-import de.mario.roguelette.betting.Bet;
 
 public class LightningStormFortune extends FortuneShopItem {
     public LightningStormFortune() {
@@ -19,16 +18,6 @@ public class LightningStormFortune extends FortuneShopItem {
             int index = MathUtils.random(0, gameState.getWheel().size() - 1);
             gameState.getWheel().getSegmentAt(index).setMultiplier(gameState.getWheel().getSegmentAt(index).getMultiplier() + 0.5f);
         }
-    }
-
-    @Override
-    public float baseModifier(Bet bet) {
-        return 0; // no change
-    }
-
-    @Override
-    public float totalModifier(Bet bet) {
-        return 1; // no change
     }
 
     @Override

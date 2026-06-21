@@ -101,6 +101,17 @@ public class WheelRenderer implements Renderable {
         return 0;
     }
 
+    /**
+     * Returns an angle (including the current rotation) that, when passed to
+     * {@link #getCurrentSegment(float)} / {@link #getCurrentSegmentIndex(float)}, selects the
+     * segment at the given index. Points at the segment center. Used to retarget the spin when a
+     * listener overrides the landing.
+     */
+    public float getSelectAngleForIndex(int index) {
+        SegmentDraw sd = segmentDraws.get(index);
+        return MathHelper.normalizeAngle(sd.getStartAngle() + anglePerSegment * 0.5f + wheelAnimator.getRotationAngle());
+    }
+
     public float getCurrentSegmentStartAngle(float angle) {
         float actualAngle = MathHelper.normalizeAngle(angle - wheelAnimator.getRotationAngle());
         for (SegmentDraw sd : segmentDraws) {

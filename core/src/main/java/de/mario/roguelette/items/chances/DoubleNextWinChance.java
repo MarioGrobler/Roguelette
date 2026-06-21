@@ -3,7 +3,8 @@ package de.mario.roguelette.items.chances;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
-import de.mario.roguelette.betting.Bet;
+import de.mario.roguelette.GameState;
+import de.mario.roguelette.events.BetResolution;
 
 
 public class DoubleNextWinChance extends PendingChanceShopItem {
@@ -24,12 +25,9 @@ public class DoubleNextWinChance extends PendingChanceShopItem {
     }
 
     @Override
-    public float baseModifier(Bet bet) {
-        return 0;
-    }
-
-    @Override
-    public float totalModifier(Bet bet) {
-        return 2;
+    public void onResolveBet(final GameState gameState, final BetResolution resolution) {
+        if (resolution.isWin()) {
+            resolution.multiplyTotal(2f);
+        }
     }
 }

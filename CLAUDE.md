@@ -48,6 +48,7 @@ Roguelette is a roguelike roulette builder game built with libGDX (Java). Player
 | `wheel/` | Wheel and Segment classes with effect system |
 | `betting/` | Bet types and betting logic (BetType enum defines payouts) |
 | `items/` | Shop system with three item categories |
+| `events/` | Game event layer: `GameEventListener` hooks + `LandingContext`/`BetResolution` |
 | `render/` | All rendering components implementing `Renderable` interface |
 | `animator/` | Wheel and ball animation logic |
 | `util/` | Managers (BetManager, MusicManager, PendingChanceManager) |
@@ -76,10 +77,24 @@ All visual components implement `Renderable` interface with:
 - `render()` - Draw the component
 - `contains(x, y)` - Hit detection for mouse interaction
 
+### Event Layer
+
+Persistent game objects (owned `FortuneShopItem`s, active `PendingChanceShopItem`s) implement
+`GameEventListener` (package `events/`). `GameState` aggregates them (fortunes first, then
+chances) and dispatches at well-defined points instead of hard-wiring effects into payout/spin
+code:
+- `onSpinStart` / `onBallLanded(LandingContext)` — `LandingContext` is mutable, so items can
+  override where the ball lands (Ricochet, Freeze, future ball modifiers). The landing is
+  decided at selection time, before the spin animates to it.
+- `onResolveBet(BetResolution)` — items contribute `addBase`/`multiplyTotal` (win) or
+  `addRefund` (loss). `Bet.getPayout` builds the `BetResolution` and dispatches.
+- `onTurnChange` — per-turn upkeep (duration ticking, wheel mutation, interest, ...).
+
 ### Payout Formula
 
 ```
-amount × (base_multiplier + chance_base) × segment_multiplier × fortune_total
+amount × (base_multiplier + Σ listener base adds) × segment_multiplier × Π listener total muls   (win)
+amount × min(1, Σ listener refund fractions)                                                      (loss)
 ```
 
 ### Progression System
@@ -100,23 +115,21 @@ amount × (base_multiplier + chance_base) × segment_multiplier × fortune_total
 Development session notes are stored in `.claude/notes/` with detailed summaries of work done.
 Screenshots documenting progress are in `.claude/screenshots/` with timestamp filenames (YYYY-MM-DD-HH-MM.png).
 
-**Latest session:** `2026-06-20-graphics-polish-session.md` - Major graphics overhaul including:
-- FreeType fonts (Montserrat Bold)
-- Gradient backgrounds, UI elements, segments, chips
-- Drop shadows throughout
-- Improved wheel rendering (rim, center hub)
-- Remaining issues documented for continuation
+**Latest session:** `2026-06-20-event-layer-and-chances-session.md` - Introduced the event
+layer + new chances (Insurance, Lucky Seven, Ricochet). The 3 graphics nitpicks are committed
+(`7c53f5c`); the event-layer + chances work is in the working tree, **not yet committed**.
+Earlier graphics overhaul: `2026-06-20-graphics-polish-session.md`.
 
 ## Current State / Next Ideas
 
 ### 1. More Items
 
 **Chances (single-use actives):**
-- Reroll: refresh shop inventory
-- Insurance: refund bet on loss
-- Freeze: lock a segment as guaranteed landing
-- Lucky Seven: all 7s on wheel pay triple
-- Ricochet: if ball lands on 0, bounce to random non-zero
+- Reroll: refresh shop inventory — NOT DONE (needs a shop-refresh hook; renderer coupling)
+- ✅ Insurance: refund bet on loss — DONE (`InsuranceChance`)
+- Freeze: lock a segment as guaranteed landing — NOT DONE (next: WheelSelectChance + onBallLanded)
+- ✅ Lucky Seven: landing on a 7 pays triple — DONE (`LuckySevenChance`)
+- ✅ Ricochet: if ball lands on 0, bounce to random non-zero — DONE (`RicochetChance`)
 
 **Fortunes (passives):**
 - Interest: earn % of balance between rounds

@@ -5,8 +5,8 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.MathUtils;
 import de.mario.roguelette.GameState;
-import de.mario.roguelette.betting.Bet;
 import de.mario.roguelette.betting.NumberBet;
+import de.mario.roguelette.events.BetResolution;
 import de.mario.roguelette.wheel.NumberSegment;
 import de.mario.roguelette.wheel.Segment;
 import de.mario.roguelette.wheel.effects.NumberEffect;
@@ -24,16 +24,14 @@ public class MirrorFateChance extends PendingChanceShopItem implements WheelSele
     }
 
     @Override
-    public float baseModifier(Bet bet) {
-        if (bet.getBetType() instanceof NumberBet && ((NumberBet) bet.getBetType()).getNumber() == mirrorNumber) {
-            return 14; // 36 base + 14 = 50
+    public void onResolveBet(final GameState gameState, final BetResolution resolution) {
+        if (!resolution.isWin()) {
+            return;
         }
-        return 0;
-    }
-
-    @Override
-    public float totalModifier(Bet bet) {
-        return 1; // no change
+        if (resolution.getBet().getBetType() instanceof NumberBet
+            && ((NumberBet) resolution.getBet().getBetType()).getNumber() == mirrorNumber) {
+            resolution.addBase(14); // 36 base + 14 = 50
+        }
     }
 
     @Override
