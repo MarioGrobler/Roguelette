@@ -17,6 +17,14 @@ public interface GameEventListener {
     default void onSpinStart(final GameState gameState) {}
 
     /**
+     * Fired before the landings are determined, while the set of balls for the spin is still being
+     * assembled. The spin is seeded with the player's default ball(s); listeners may add more
+     * through the mutable {@link SpinContext} (e.g. Double Ball). Each ball lands and pays out
+     * independently.
+     */
+    default void onPrepareSpin(final GameState gameState, final SpinContext spin) {}
+
+    /**
      * Fired once the landing segment has been determined (but before the spin animates to it).
      * Listeners may change the landing via the mutable {@link LandingContext} (e.g. Ricochet,
      * Freeze, or future ball modifiers).

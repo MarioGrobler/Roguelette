@@ -11,6 +11,7 @@ import com.badlogic.gdx.math.MathUtils;
 import de.mario.roguelette.GameState;
 import de.mario.roguelette.animator.BallAnimator;
 import de.mario.roguelette.animator.WheelAnimator;
+import de.mario.roguelette.balls.Ball;
 import de.mario.roguelette.render.Renderable;
 import de.mario.roguelette.render.segment.SegmentDraw;
 import de.mario.roguelette.util.MathHelper;
@@ -37,7 +38,11 @@ public class WheelRenderer implements Renderable {
     private float ballRadius = 10f;
 
     private final WheelAnimator wheelAnimator;
-    private final BallAnimator ballAnimator;
+    private final BallAnimator ballAnimator; // primary ball (ball 0)
+    private Color primaryTint = Ball.defaultBall().getTint(); // tint of the primary ball
+    // extra balls for multi-ball spins (e.g. Double Ball); empty for an ordinary single-ball spin
+    private final List<BallAnimator> extraBalls = new ArrayList<>();
+    private final List<Color> extraTints = new ArrayList<>();
     private final List<SegmentDraw> segmentDraws = new ArrayList<>();
 
 
@@ -110,6 +115,15 @@ public class WheelRenderer implements Renderable {
     public float getSelectAngleForIndex(int index) {
         SegmentDraw sd = segmentDraws.get(index);
         return MathHelper.normalizeAngle(sd.getStartAngle() + anglePerSegment * 0.5f + wheelAnimator.getRotationAngle());
+    }
+
+    /**
+     * The rotation-independent centre angle of the segment at the given index (i.e. ignoring the
+     * wheel's current rotation). Add the wheel's final rotation to get the screen angle the segment
+     * centre ends up at — used to aim each ball of a multi-ball spin at its landing segment.
+     */
+    public float getSegmentCenterBaseAngle(int index) {
+        return segmentDraws.get(index).getStartAngle() + anglePerSegment * 0.5f;
     }
 
     public float getCurrentSegmentStartAngle(float angle) {
@@ -251,8 +265,17 @@ public class WheelRenderer implements Renderable {
         Gdx.gl.glEnable(GL20.GL_BLEND);
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
 
-        float ballX = ballAnimator.getX(centerX);
-        float ballY = ballAnimator.getY(centerY);
+        renderSingleBall(ballAnimator, primaryTint);
+        for (int i = 0; i < extraBalls.size(); i++) {
+            renderSingleBall(extraBalls.get(i), extraTints.get(i));
+        }
+
+        Gdx.gl.glDisable(GL20.GL_BLEND);
+    }
+
+    private void renderSingleBall(final BallAnimator animator, final Color tint) {
+        float ballX = animator.getX(centerX);
+        float ballY = animator.getY(centerY);
 
         // Ball shadow
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
@@ -260,12 +283,12 @@ public class WheelRenderer implements Renderable {
         shapeRenderer.circle(ballX + 2, ballY - 2, ballRadius);
         shapeRenderer.end();
 
-        // Ball with gradient (white to light gray)
+        // Ball with gradient (tint to a slightly darker tint)
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         for (int i = 5; i >= 0; i--) {
             float t = (float) i / 5f;
             float c = lerp(1f, 0.85f, t);
-            shapeRenderer.setColor(new Color(c, c, c, 1f));
+            shapeRenderer.setColor(new Color(tint.r * c, tint.g * c, tint.b * c, 1f));
             shapeRenderer.circle(ballX, ballY, ballRadius * (1f - t * 0.2f));
         }
 
@@ -273,8 +296,6 @@ public class WheelRenderer implements Renderable {
         shapeRenderer.setColor(new Color(1f, 1f, 1f, 0.9f));
         shapeRenderer.circle(ballX - ballRadius * 0.3f, ballY + ballRadius * 0.3f, ballRadius * 0.25f);
         shapeRenderer.end();
-
-        Gdx.gl.glDisable(GL20.GL_BLEND);
     }
 
     private float lerp(float a, float b, float t) {
@@ -315,6 +336,9 @@ public class WheelRenderer implements Renderable {
     public void update(float delta) {
         wheelAnimator.update(delta);
         ballAnimator.update(delta);
+        for (BallAnimator extra : extraBalls) {
+            extra.update(delta);
+        }
     }
 
     public void infiniteWheelSpin(float speed) {
@@ -345,6 +369,43 @@ public class WheelRenderer implements Renderable {
     public void spinBallToTarget(float speed, float targetAngle, float radius) {
         ballAnimator.startInfiniteSpin(speed, radius);
         ballAnimator.stopAtTarget(targetAngle, 180f);
+    }
+
+    private void launchBall(final BallAnimator ball, float speed, float targetAngle) {
+        ball.startInfiniteSpin(speed, outerRadius);
+        ball.stopAtTarget(targetAngle, 180f);
+    }
+
+    /**
+     * Spins one ball per target screen-angle (the primary ball plus one extra per additional
+     * target), each tinted with the matching colour, and invokes {@code onAllStopped} once every
+     * ball has come to rest. The lists must be the same length and non-empty.
+     */
+    public void spinBalls(final List<Float> targetAngles, final List<Color> tints, final Runnable onAllStopped) {
+        extraBalls.clear();
+        extraTints.clear();
+        primaryTint = tints.get(0);
+
+        final int total = targetAngles.size();
+        final int[] stopped = {0};
+        final WheelAnimator.SpinEndListener latch = () -> {
+            if (++stopped[0] == total) {
+                onAllStopped.run();
+            }
+        };
+
+        // primary ball
+        ballAnimator.setListener(latch);
+        launchBall(ballAnimator, 1000f, targetAngles.get(0));
+
+        // extra balls
+        for (int i = 1; i < total; i++) {
+            BallAnimator extra = new BallAnimator(wheelRadius - 2 * ballRadius);
+            extra.setListener(latch);
+            launchBall(extra, 1000f, targetAngles.get(i));
+            extraBalls.add(extra);
+            extraTints.add(tints.get(i));
+        }
     }
 
     public float getCurrentRotation() {

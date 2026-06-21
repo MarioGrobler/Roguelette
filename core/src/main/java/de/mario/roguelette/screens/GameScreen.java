@@ -16,9 +16,11 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import de.mario.roguelette.GameState;
 import de.mario.roguelette.Player;
 import de.mario.roguelette.RougeletteGame;
+import de.mario.roguelette.balls.Ball;
 import de.mario.roguelette.betting.Bet;
 import de.mario.roguelette.betting.BetType;
 import de.mario.roguelette.events.LandingContext;
+import de.mario.roguelette.events.SpinContext;
 import de.mario.roguelette.items.Inventory;
 import de.mario.roguelette.items.Shop;
 import de.mario.roguelette.items.ShopItem;
@@ -39,6 +41,8 @@ import de.mario.roguelette.wheel.Segment;
 import de.mario.roguelette.wheel.Wheel;
 import de.mario.roguelette.wheel.WheelFactory;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 public class GameScreen implements Screen {
@@ -302,60 +306,93 @@ public class GameScreen implements Screen {
         });
     }
 
+    /**
+     * Resolves the bets and spins the wheel. The landings (one per ball; usually just the default
+     * ball, more if a ball modifier such as Double Ball is active) are decided up front via the
+     * event layer, then the balls are animated to them and the payout applied when all have stopped.
+     */
+    private void startSpin() {
+        gameState.getPlayer().resetHand();
+
+        float selectAngle = MathUtils.random(0f, 360f); // segment at this angle will be selected
+        float targetAngle = MathUtils.random(0f, 360f); // rotation where this segment is going to be at the end
+
+        // if the crystal ball item is active and still available, use this segment instead
+        if (gameState.getCrystalBallSegment() != null) {
+            Optional<Float> optStartAngle = wheelRenderer.findStartAngleForSegment(gameState.getCrystalBallSegment());
+            if (optStartAngle.isPresent()) {
+                selectAngle = optStartAngle.get() + 1f; // +1 because checking exactly on the border can lead to selecting a neighbor
+            }
+        }
+
+        // event layer: notify listeners of the spin and let them override where the ball lands
+        // (e.g. Freeze forces a segment, Ricochet bounces off zero, ball modifiers, ...)
+        gameState.dispatchSpinStart();
+
+        // primary ball: roll its landing and let listeners retarget it
+        LandingContext landing = new LandingContext(gameState.getWheel(), wheelRenderer.getCurrentSegmentIndex(selectAngle));
+        gameState.dispatchBallLanded(landing);
+        if (landing.wasChanged()) {
+            selectAngle = wheelRenderer.getSelectAngleForIndex(landing.getSegmentIndex());
+        }
+        int primaryIndex = landing.getSegmentIndex();
+
+        // the wheel rotation is fixed by the primary ball; every ball lands relative to it
+        float halfSweepAngle = 360f / (2 * gameState.getWheel().size());
+        float center = wheelRenderer.getCurrentSegmentStartAngle(selectAngle) + halfSweepAngle; // center angle of the primary segment
+        float wheelRotation = targetAngle - center;
+
+        // assemble the balls for this spin: the player's default ball plus any added by listeners
+        SpinContext spin = new SpinContext();
+        spin.addBall(Ball.defaultBall()); // TODO: seed from the player's selected ball(s)
+        gameState.dispatchPrepareSpin(spin);
+
+        // assign each ball a landing (the primary keeps its rolled index; extras roll their own,
+        // also subject to landing listeners), then resolve screen targets against the fixed rotation
+        List<Segment> landedSegments = new ArrayList<>();
+        List<Float> ballTargets = new ArrayList<>();
+        List<Color> ballTints = new ArrayList<>();
+        for (int b = 0; b < spin.ballCount(); b++) {
+            int idx;
+            if (b == 0) {
+                idx = primaryIndex;
+            } else {
+                LandingContext extra = new LandingContext(gameState.getWheel(), MathUtils.random(gameState.getWheel().size() - 1));
+                gameState.dispatchBallLanded(extra);
+                idx = extra.getSegmentIndex();
+            }
+            landedSegments.add(gameState.getWheel().getSegmentAt(idx));
+            ballTargets.add(wheelRenderer.getSegmentCenterBaseAngle(idx) + wheelRotation);
+            ballTints.add(spin.getBalls().get(b).getTint());
+        }
+
+        gameState.setState(GameState.GameStateMode.SPINNING);
+        wheelRenderer.spinWheelToTarget(wheelRotation);
+        wheelRenderer.spinBalls(ballTargets, ballTints, () -> {
+            // turn change
+            gameState.setState(GameState.GameStateMode.DEFAULT);
+            gameState.getPlayer().pay(gameState.getBetManager().totalAmount());
+            gameState.applyReturnOfBets(landedSegments);
+            gameState.endRound(game);
+
+            gameState.applyOnTurnChangeEffects();
+
+            wheelRenderer.updateWheel();
+            chipRenderer.updateChips();
+            bettingAreaRenderer.updateBetValues();
+            activeChanceEffectsRenderer.updateChances();
+
+            gameState.resetCrystalBallSegment();
+            shopRenderer.updateItems();
+        });
+    }
+
     private void handleInputDefault() {
         Vector3 touchPos = new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0);
         camera.unproject(touchPos);
 
         if (wheelRenderer.contains(touchPos.x, touchPos.y) && gameState.betsNotEmpty()) {
-            gameState.getPlayer().resetHand();
-
-            float selectAngle = MathUtils.random(0f, 360f); // segment at this angle will be selected
-            float targetAngle = MathUtils.random(0f, 360f); // rotation where this segment is going to be at the end
-
-            // if the crystal ball item is active and still available, use this segment instead
-            if (gameState.getCrystalBallSegment() != null) {
-                Optional<Float> optStartAngle = wheelRenderer.findStartAngleForSegment(gameState.getCrystalBallSegment());
-                if (optStartAngle.isPresent()) {
-                    selectAngle = optStartAngle.get() + 1f; // +1 because checking exactly on the border can lead to selecting a neighbor
-                }
-            }
-
-            // event layer: notify listeners of the spin and let them override where the ball lands
-            // (e.g. Freeze forces a segment, Ricochet bounces off zero, ball modifiers, ...)
-            gameState.dispatchSpinStart();
-            LandingContext landing = new LandingContext(gameState.getWheel(), wheelRenderer.getCurrentSegmentIndex(selectAngle));
-            gameState.dispatchBallLanded(landing);
-            if (landing.wasChanged()) {
-                selectAngle = wheelRenderer.getSelectAngleForIndex(landing.getSegmentIndex());
-            }
-
-            Segment segment = wheelRenderer.getCurrentSegment(selectAngle);
-
-
-            float halfSweepAngle = 360f / (2*gameState.getWheel().size());
-            float center = wheelRenderer.getCurrentSegmentStartAngle(selectAngle) + halfSweepAngle; // center angle of segment we are targeting
-            System.out.println("select: " + selectAngle + ", target: " + targetAngle + ", s: " + segment.getShortDescription());
-
-            gameState.setState(GameState.GameStateMode.SPINNING);
-            wheelRenderer.spinWheelToTarget(targetAngle - center);
-            wheelRenderer.spinBallToTarget(1000f, targetAngle);
-            wheelRenderer.setBallListener(() -> {
-                // turn change
-                gameState.setState(GameState.GameStateMode.DEFAULT);
-                gameState.getPlayer().pay(gameState.getBetManager().totalAmount());
-                gameState.applyReturnOfBets(segment);
-                gameState.endRound(game);
-
-                gameState.applyOnTurnChangeEffects();
-
-                wheelRenderer.updateWheel();
-                chipRenderer.updateChips();
-                bettingAreaRenderer.updateBetValues();
-                activeChanceEffectsRenderer.updateChances();
-
-                gameState.resetCrystalBallSegment();
-                shopRenderer.updateItems();
-            });
+            startSpin();
         }
 
         if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {

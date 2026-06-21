@@ -55,9 +55,18 @@ public class BetManager {
     }
 
     public int computeReturn(final Segment segment, final GameState gameState) {
+        return computeReturn(Collections.singletonList(segment), gameState);
+    }
+
+    /**
+     * Computes the combined return of all bets across every ball's landing segment. Winnings sum
+     * per winning landing; refunds for a losing bet are counted once (see
+     * {@link Bet#getPayout(List, GameState)}).
+     */
+    public int computeReturn(final List<Segment> segments, final GameState gameState) {
         float ret = 0;
         for (Bet b : bets) {
-            ret += b.getPayout(segment, gameState);
+            ret += b.getPayout(segments, gameState);
         }
         return (int) ret;
     }

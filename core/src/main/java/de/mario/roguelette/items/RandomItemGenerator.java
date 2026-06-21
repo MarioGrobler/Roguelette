@@ -3,15 +3,20 @@ package de.mario.roguelette.items;
 import com.badlogic.gdx.math.MathUtils;
 import de.mario.roguelette.items.chances.ChanceShopItem;
 import de.mario.roguelette.items.chances.CrystalBallChance;
+import de.mario.roguelette.items.chances.DoubleBallChance;
 import de.mario.roguelette.items.chances.DoubleNextWinChance;
+import de.mario.roguelette.items.chances.FreezeChance;
 import de.mario.roguelette.items.chances.InsuranceChance;
 import de.mario.roguelette.items.chances.LuckySevenChance;
 import de.mario.roguelette.items.chances.MirrorFateChance;
 import de.mario.roguelette.items.chances.RicochetChance;
+import de.mario.roguelette.items.fortunes.ComebackKidFortune;
 import de.mario.roguelette.items.fortunes.FortuneShopItem;
+import de.mario.roguelette.items.fortunes.InterestFortune;
 import de.mario.roguelette.items.fortunes.LightningStormFortune;
 import de.mario.roguelette.items.fortunes.PaintItBlackFortune;
 import de.mario.roguelette.items.fortunes.ScarletSurgeFortune;
+import de.mario.roguelette.items.fortunes.StreakBonusFortune;
 import de.mario.roguelette.items.segments.AddSegmentShopItem;
 import de.mario.roguelette.items.segments.DeleteSegmentShopItem;
 import de.mario.roguelette.items.segments.SegmentShopItem;
@@ -107,19 +112,27 @@ public class RandomItemGenerator {
         pool.add(new InsuranceChance());
         pool.add(new LuckySevenChance());
         pool.add(new RicochetChance());
+        pool.add(new FreezeChance());
+        pool.add(new DoubleBallChance());
 
         Collections.shuffle(pool);
         return new ArrayList<>(pool.subList(0, Math.min(CHANCES_PER_RESTOCK, pool.size())));
     }
 
+    private static final int FORTUNES_PER_RESTOCK = 3;
+
     public List<FortuneShopItem> generateFortunes() {
-        List<FortuneShopItem> fortunes = new ArrayList<>();
+        List<FortuneShopItem> pool = new ArrayList<>();
 
-        fortunes.add(new LightningStormFortune());
-        fortunes.add(new PaintItBlackFortune());
-        fortunes.add(new ScarletSurgeFortune());
+        pool.add(new LightningStormFortune());
+        pool.add(new PaintItBlackFortune());
+        pool.add(new ScarletSurgeFortune());
+        pool.add(new InterestFortune());
+        pool.add(new ComebackKidFortune());
+        pool.add(new StreakBonusFortune());
 
-        return fortunes;
+        Collections.shuffle(pool);
+        return new ArrayList<>(pool.subList(0, Math.min(FORTUNES_PER_RESTOCK, pool.size())));
     }
 
     public List<SegmentShopItem> generateSegments(int deleteSegmentPrice) {

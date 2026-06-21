@@ -10,7 +10,7 @@ import de.mario.roguelette.wheel.effects.MultiplierEffect;
 
 public class ScarletSurgeFortune extends FortuneShopItem{
     public ScarletSurgeFortune() {
-        super(new FortuneRenderInfo(new Texture(Gdx.files.internal("icon/scarletSurge.png")), Color.GOLDENROD, Color.BROWN));
+        super(new FortuneRenderInfo(new Texture(Gdx.files.internal("icon/scarletSurge.png")), Color.GOLDENROD, new Color(0.72f, 0.12f, 0.12f, 1f)));
         this.cost = 8;
     }
 

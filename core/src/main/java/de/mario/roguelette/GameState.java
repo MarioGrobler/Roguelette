@@ -3,6 +3,7 @@ package de.mario.roguelette;
 import de.mario.roguelette.events.BetResolution;
 import de.mario.roguelette.events.GameEventListener;
 import de.mario.roguelette.events.LandingContext;
+import de.mario.roguelette.events.SpinContext;
 import de.mario.roguelette.items.Shop;
 import de.mario.roguelette.items.chances.ChanceShopItem;
 import de.mario.roguelette.items.chances.WheelSelectChance;
@@ -18,6 +19,7 @@ import de.mario.roguelette.wheel.Wheel;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
 
@@ -200,6 +202,13 @@ public class GameState {
         }
     }
 
+    /** Fired while assembling the balls for a spin; listeners may add balls via the context. */
+    public void dispatchPrepareSpin(final SpinContext spin) {
+        for (GameEventListener listener : collectListeners()) {
+            listener.onPrepareSpin(this, spin);
+        }
+    }
+
     /** Fired once the landing has been rolled; listeners may override it via the context. */
     public void dispatchBallLanded(final LandingContext landing) {
         for (GameEventListener listener : collectListeners()) {
@@ -273,10 +282,19 @@ public class GameState {
     }
 
     /**
-     * Computes the return of the bets for the current segment. Clears the bets and pending chances afterwards.
+     * Computes the return of the bets for the current segment. Clears the bets afterwards.
      */
     public void applyReturnOfBets(final Segment segment) {
-        player.earn(betManager.computeReturn(segment, this));
+        applyReturnOfBets(Collections.singletonList(segment));
+    }
+
+    /**
+     * Computes the combined return of the bets across every ball's landing segment (each ball
+     * resolves the bets independently and the payouts sum), then clears the bets. With a single
+     * ball this is equivalent to {@link #applyReturnOfBets(Segment)}.
+     */
+    public void applyReturnOfBets(final List<Segment> segments) {
+        player.earn(betManager.computeReturn(segments, this));
         betManager.clear();
     }
 

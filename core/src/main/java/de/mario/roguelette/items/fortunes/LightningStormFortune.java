@@ -8,7 +8,7 @@ import de.mario.roguelette.GameState;
 
 public class LightningStormFortune extends FortuneShopItem {
     public LightningStormFortune() {
-        super(new FortuneRenderInfo(new Texture(Gdx.files.internal("icon/lightningStorm.png")), Color.GOLDENROD, Color.BROWN));
+        super(new FortuneRenderInfo(new Texture(Gdx.files.internal("icon/lightningStorm.png")), Color.GOLDENROD, new Color(0.22f, 0.4f, 0.85f, 1f)));
         this.cost = 15;
     }
 

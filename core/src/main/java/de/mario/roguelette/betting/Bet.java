@@ -4,6 +4,9 @@ import de.mario.roguelette.GameState;
 import de.mario.roguelette.events.BetResolution;
 import de.mario.roguelette.wheel.Segment;
 
+import java.util.Collections;
+import java.util.List;
+
 public class Bet {
     private final BetType betType;
     private int amount;
@@ -18,21 +21,44 @@ public class Bet {
     }
 
     /**
-     * @return the payout for this bet. On a win, the payout follows the formula
-     * <pre>amount * (base multiplier + listener base modifiers) * segment multiplier * listener total modifiers</pre>
-     * On a loss, listeners (e.g. Insurance) may refund part of the stake; the refund is capped at
-     * the full stake.
+     * @return the payout for this bet given a single landing. See {@link #getPayout(List, GameState)}.
      */
     public float getPayout(final Segment landed, final GameState gameState) {
-        boolean win = isWin(landed);
-        BetResolution resolution = new BetResolution(this, landed, win);
-        gameState.dispatchResolveBet(resolution);
+        return getPayout(Collections.singletonList(landed), gameState);
+    }
 
-        if (win) {
-            float base = betType.getPayoutMultiplier() + resolution.getBaseAdd();
-            return amount * base * landed.getCurrentMultiplier() * resolution.getTotalMul();
+    /**
+     * @return the payout for this bet across every ball's landing segment. On a win the payout
+     * follows the formula
+     * <pre>amount * (base multiplier + listener base modifiers) * segment multiplier * listener total modifiers</pre>
+     * and, with multiple balls, the winnings of each winning landing are <em>summed</em> (so a
+     * second ball that also wins pays again). A refund (e.g. Insurance) only applies if the bet
+     * won on <em>no</em> ball and is counted once, capped at the full stake — multiple balls do
+     * not multiply the refund.
+     */
+    public float getPayout(final List<Segment> landedSegments, final GameState gameState) {
+        float winnings = 0f;
+        boolean wonAny = false;
+        float refundFraction = 0f;
+
+        for (Segment landed : landedSegments) {
+            boolean win = isWin(landed);
+            BetResolution resolution = new BetResolution(this, landed, win);
+            gameState.dispatchResolveBet(resolution);
+
+            if (win) {
+                wonAny = true;
+                float base = betType.getPayoutMultiplier() + resolution.getBaseAdd();
+                winnings += amount * base * landed.getCurrentMultiplier() * resolution.getTotalMul();
+            } else {
+                refundFraction = Math.max(refundFraction, resolution.getRefundFraction());
+            }
         }
-        return amount * Math.min(1f, resolution.getRefundFraction());
+
+        if (wonAny) {
+            return winnings;
+        }
+        return amount * Math.min(1f, refundFraction);
     }
 
     public BetType getBetType() {

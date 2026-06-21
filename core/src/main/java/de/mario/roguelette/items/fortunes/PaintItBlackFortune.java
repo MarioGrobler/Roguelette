@@ -17,7 +17,7 @@ public class PaintItBlackFortune extends FortuneShopItem {
     private float blackModifier = 0f;
 
     public PaintItBlackFortune() {
-        super(new FortuneRenderInfo(new Texture(Gdx.files.internal("icon/paintItBlack.png")), Color.GOLDENROD, Color.BROWN));
+        super(new FortuneRenderInfo(new Texture(Gdx.files.internal("icon/paintItBlack.png")), Color.GOLDENROD, new Color(0.12f, 0.12f, 0.15f, 1f)));
         this.cost = 20;
     }
 
