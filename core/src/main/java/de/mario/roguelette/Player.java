@@ -1,6 +1,10 @@
 package de.mario.roguelette;
 
+import de.mario.roguelette.characters.Character;
+import de.mario.roguelette.events.GameEventListener;
 import de.mario.roguelette.items.Inventory;
+
+import java.util.List;
 
 public class Player {
     private final Inventory inventory;
@@ -9,10 +13,27 @@ public class Player {
     private int currentlyInHand = 0; //amount of money currently in hand to be placed somewhere
     private final String name;
 
-    public Player(final Inventory inventory, int money, String name) {
+    private final Character character;
+    private final List<GameEventListener> characterListeners;
+
+    public Player(final Inventory inventory, final Character character) {
         this.inventory = inventory;
-        this.balance = money;
-        this.name = name;
+        this.character = character;
+        this.balance = character.getStartingBalance();
+        this.name = character.getName();
+        this.characterListeners = character.createListeners();
+    }
+
+    public Character getCharacter() {
+        return character;
+    }
+
+    /**
+     * The character's run-level passive listeners, instantiated once for this run. Aggregated by
+     * {@code GameState.collectListeners} ahead of fortunes and chances.
+     */
+    public List<GameEventListener> getCharacterListeners() {
+        return characterListeners;
     }
 
     public int getBalance() {

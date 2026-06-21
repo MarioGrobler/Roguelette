@@ -68,6 +68,9 @@ public class WheelRenderer implements Renderable {
         this.wheelAnimator = new WheelAnimator();
         this.ballAnimator = new BallAnimator(wheelRadius-2*ballRadius);
 
+        // show the player's signature ball tint at rest, before the first spin sets it
+        this.primaryTint = gameState.getPlayer().getCharacter().createSignatureBall().getTint();
+
         updateWheel();
     }
 
@@ -283,18 +286,25 @@ public class WheelRenderer implements Renderable {
         shapeRenderer.circle(ballX + 2, ballY - 2, ballRadius);
         shapeRenderer.end();
 
-        // Ball with gradient (tint to a slightly darker tint)
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+
+        // Dark outline ring so the ball stays legible on a same-coloured segment (e.g. the Count's
+        // red ball on a red segment); the coloured body below is inset to reveal it.
+        shapeRenderer.setColor(new Color(0f, 0f, 0f, 0.55f));
+        shapeRenderer.circle(ballX, ballY, ballRadius);
+
+        // Ball with gradient (tint to a slightly darker tint)
+        float bodyRadius = ballRadius - 1.5f;
         for (int i = 5; i >= 0; i--) {
             float t = (float) i / 5f;
             float c = lerp(1f, 0.85f, t);
             shapeRenderer.setColor(new Color(tint.r * c, tint.g * c, tint.b * c, 1f));
-            shapeRenderer.circle(ballX, ballY, ballRadius * (1f - t * 0.2f));
+            shapeRenderer.circle(ballX, ballY, bodyRadius * (1f - t * 0.2f));
         }
 
         // Highlight on ball
         shapeRenderer.setColor(new Color(1f, 1f, 1f, 0.9f));
-        shapeRenderer.circle(ballX - ballRadius * 0.3f, ballY + ballRadius * 0.3f, ballRadius * 0.25f);
+        shapeRenderer.circle(ballX - bodyRadius * 0.3f, ballY + bodyRadius * 0.3f, bodyRadius * 0.25f);
         shapeRenderer.end();
     }
 

@@ -185,11 +185,13 @@ public class GameState {
     }
 
     /**
-     * Collects all currently active event listeners: the owned fortunes followed by the active
-     * pending chances. Fortunes are listed first so their effects resolve before chances.
+     * Collects all currently active event listeners: the player's character passives first, then
+     * the owned fortunes, then the active pending chances. The character is the most fundamental
+     * run identity so its effects resolve before items.
      */
     private List<GameEventListener> collectListeners() {
         List<GameEventListener> listeners = new ArrayList<>();
+        listeners.addAll(player.getCharacterListeners());
         listeners.addAll(player.getInventory().getFortunes());
         listeners.addAll(pendingChanceManager.getActiveChances());
         return listeners;

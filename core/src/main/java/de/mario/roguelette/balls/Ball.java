@@ -12,9 +12,15 @@ import com.badlogic.gdx.graphics.Color;
 public class Ball {
 
     private final Color tint;
+    private final String name;
 
     public Ball(final Color tint) {
+        this(tint, "Classic Ball");
+    }
+
+    public Ball(final Color tint, final String name) {
         this.tint = tint;
+        this.name = name;
     }
 
     /**
@@ -23,10 +29,15 @@ public class Ball {
      * the ball a pearl/chrome look. Easy to retheme later per the planned ball "player select".
      */
     public static Ball defaultBall() {
-        return new Ball(new Color(0.80f, 0.80f, 0.84f, 1f));
+        return new Ball(new Color(0.80f, 0.80f, 0.84f, 1f), "Classic Ball");
     }
 
     public Color getTint() {
         return tint;
+    }
+
+    /** Display name shown on the character-select signature-ball chip. */
+    public String getName() {
+        return name;
     }
 }

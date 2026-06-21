@@ -16,8 +16,8 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import de.mario.roguelette.GameState;
 import de.mario.roguelette.Player;
 import de.mario.roguelette.RougeletteGame;
-import de.mario.roguelette.balls.Ball;
 import de.mario.roguelette.betting.Bet;
+import de.mario.roguelette.characters.Character;
 import de.mario.roguelette.betting.BetType;
 import de.mario.roguelette.events.LandingContext;
 import de.mario.roguelette.events.SpinContext;
@@ -51,6 +51,7 @@ public class GameScreen implements Screen {
     private static final float MAX_SEGMENTS = 60;
 
     private final RougeletteGame game;
+    private final Character character;
 
     private OrthographicCamera camera;
     private ShapeRenderer shapeRenderer;
@@ -68,15 +69,16 @@ public class GameScreen implements Screen {
 
     private GameState gameState;
 
-    public GameScreen(RougeletteGame game) {
+    public GameScreen(RougeletteGame game, Character character) {
         this.game = game;
+        this.character = character;
     }
 
 
     @Override
     public void show() {
         Inventory inventory = new Inventory();
-        Player player = new Player(inventory, 100, "Yannik");
+        Player player = new Player(inventory, character);
         Wheel wheel = WheelFactory.createClassicWheel();
         BetManager betManager = new BetManager();
         Shop shop = new Shop();
@@ -344,7 +346,7 @@ public class GameScreen implements Screen {
 
         // assemble the balls for this spin: the player's default ball plus any added by listeners
         SpinContext spin = new SpinContext();
-        spin.addBall(Ball.defaultBall()); // TODO: seed from the player's selected ball(s)
+        spin.addBall(gameState.getPlayer().getCharacter().createSignatureBall());
         gameState.dispatchPrepareSpin(spin);
 
         // assign each ball a landing (the primary keeps its rolled index; extras roll their own,
