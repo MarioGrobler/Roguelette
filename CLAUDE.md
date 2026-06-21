@@ -48,7 +48,8 @@ Roguelette is a roguelike roulette builder game built with libGDX (Java). Player
 | `wheel/` | Wheel and Segment classes with effect system |
 | `betting/` | Bet types and betting logic (BetType enum defines payouts) |
 | `items/` | Shop system with three item categories |
-| `events/` | Game event layer: `GameEventListener` hooks + `LandingContext`/`BetResolution` |
+| `events/` | Game event layer: `GameEventListener` hooks + `LandingContext`/`BetResolution`/`SpinContext` |
+| `balls/` | `Ball` — a ball in a spin (tint now; future per-ball/player behaviour) |
 | `render/` | All rendering components implementing `Renderable` interface |
 | `animator/` | Wheel and ball animation logic |
 | `util/` | Managers (BetManager, MusicManager, PendingChanceManager) |
@@ -84,10 +85,15 @@ Persistent game objects (owned `FortuneShopItem`s, active `PendingChanceShopItem
 chances) and dispatches at well-defined points instead of hard-wiring effects into payout/spin
 code:
 - `onSpinStart` / `onBallLanded(LandingContext)` — `LandingContext` is mutable, so items can
-  override where the ball lands (Ricochet, Freeze, future ball modifiers). The landing is
-  decided at selection time, before the spin animates to it.
+  override where the ball lands (Ricochet, Freeze, ball modifiers). The landing is decided at
+  selection time, before the spin animates to it; `onBallLanded` fires once per ball.
+- `onPrepareSpin(SpinContext)` — fired before landings are rolled while the spin's ball list is
+  assembled. Seeded with the player's default ball (`Ball.defaultBall()`); listeners add more
+  (Double Ball). Each ball lands and pays out independently. Multi-ball spins are driven by
+  `GameScreen.startSpin()` + `WheelRenderer.spinBalls(...)`.
 - `onResolveBet(BetResolution)` — items contribute `addBase`/`multiplyTotal` (win) or
-  `addRefund` (loss). `Bet.getPayout` builds the `BetResolution` and dispatches.
+  `addRefund` (loss). `Bet.getPayout(List<Segment>)` builds a `BetResolution` per ball and
+  dispatches; winnings sum across balls, refunds count once.
 - `onTurnChange` — per-turn upkeep (duration ticking, wheel mutation, interest, ...).
 
 ### Payout Formula
@@ -115,10 +121,13 @@ amount × min(1, Σ listener refund fractions)                                  
 Development session notes are stored in `.claude/notes/` with detailed summaries of work done.
 Screenshots documenting progress are in `.claude/screenshots/` with timestamp filenames (YYYY-MM-DD-HH-MM.png).
 
-**Latest session:** `2026-06-20-event-layer-and-chances-session.md` - Introduced the event
-layer + new chances (Insurance, Lucky Seven, Ricochet). The 3 graphics nitpicks are committed
-(`7c53f5c`); the event-layer + chances work is in the working tree, **not yet committed**.
-Earlier graphics overhaul: `2026-06-20-graphics-polish-session.md`.
+**Latest session:** `2026-06-21-freeze-chance-session.md` - Committed the event layer
+(`00a65ef`), then added Freeze chance, three fortunes (Interest, Comeback Kid, Streak Bonus),
+the **multi-ball spin system** + Double Ball, and visual polish (transparent icons, grey ball,
+themed fortune borders). All committed (`b0d158e`) **and pushed**. Verified via a headless payout
+test + a live two-ball spin (both temp harnesses removed). Earlier: the event-layer session
+`2026-06-20-event-layer-and-chances-session.md` and graphics overhaul
+`2026-06-20-graphics-polish-session.md`.
 
 ## Current State / Next Ideas
 
@@ -127,16 +136,17 @@ Earlier graphics overhaul: `2026-06-20-graphics-polish-session.md`.
 **Chances (single-use actives):**
 - Reroll: refresh shop inventory — NOT DONE (needs a shop-refresh hook; renderer coupling)
 - ✅ Insurance: refund bet on loss — DONE (`InsuranceChance`)
-- Freeze: lock a segment as guaranteed landing — NOT DONE (next: WheelSelectChance + onBallLanded)
+- ✅ Freeze: lock a segment as guaranteed landing — DONE (`FreezeChance`; WheelSelectChance + onBallLanded)
 - ✅ Lucky Seven: landing on a 7 pays triple — DONE (`LuckySevenChance`)
 - ✅ Ricochet: if ball lands on 0, bounce to random non-zero — DONE (`RicochetChance`)
+- ✅ Double Ball: next spin plays with two balls, both pay out — DONE (`DoubleBallChance`)
 
 **Fortunes (passives):**
-- Interest: earn % of balance between rounds
-- Streak Bonus: consecutive wins increase multiplier
-- Bargain Hunter: shop discount
-- Deep Pockets: extra inventory slots
-- Comeback Kid: bonus multiplier when balance is low
+- ✅ Interest: earn % of balance between rounds — DONE (`InterestFortune`, onTurnChange)
+- ✅ Streak Bonus: consecutive winning spins increase multiplier — DONE (`StreakBonusFortune`, stateful)
+- ✅ Comeback Kid: bonus multiplier when balance is low — DONE (`ComebackKidFortune`, scales off stage goal)
+- Bargain Hunter: shop discount — NOT DONE
+- Deep Pockets: extra inventory slots — NOT DONE
 
 **Segments:**
 - Multiplier segments (2x, 3x on landing)
@@ -144,11 +154,14 @@ Earlier graphics overhaul: `2026-06-20-graphics-polish-session.md`.
 - Multi-number segments (cover 2-3 adjacent numbers)
 - Trap segments (risk/reward - high multiplier but lose extra on miss)
 
-**Ball Modifiers (new system):**
-- Double Ball: two outcomes per spin, both pay out
-- Magnetic Ball: bias toward certain colors
-- Ghost Ball: phases through first segment, lands on second
-- Heavy Ball: tends toward adjacent segments after bounce
+**Ball Modifiers (multi-ball infra DONE — `balls/Ball`, `events/SpinContext`, `onPrepareSpin`):**
+- ✅ Double Ball: two outcomes per spin, both pay out — DONE (`DoubleBallChance`)
+- Magnetic Ball: bias toward certain colors — NOT DONE (cheap `onBallLanded` item)
+- Ghost Ball: phases through first segment, lands on second — NOT DONE (`onBallLanded`)
+- Heavy Ball: tends toward adjacent segments after bounce — NOT DONE (`onBallLanded`)
+- Ball "player select" characters (default ball, red ball that pays more on red, ...): the spin
+  is seeded with `Ball.defaultBall()` in `GameScreen.startSpin()` (TODO there); per-ball payout
+  bias would hang off `balls/Ball`. NOT DONE.
 
 ### 2. Graphics Polish
 
