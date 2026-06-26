@@ -105,9 +105,14 @@ amount × min(1, Σ listener refund fractions)                                  
 
 ### Progression System
 
-6 stages with escalating goals: $500 → $2,000 → $8,000 → $40,000 → $200,000 → $1,000,000
-- Rounds per stage increase (3→5)
-- Prices scale 10× per stage via `getPriceMultiplier()`
+8 stages with a smooth ~3.2×/stage ramp (gentle stage-1 "setup", not a luck leap):
+$150 → $500 → $1,500 → $5,000 → $16,000 → $55,000 → $200,000 → $1,000,000
+- `STAGE_TARGETS` / `STAGE_ROUNDS` arrays in `GameState` drive the curve (rounds 4→6).
+- Prices scale **with the target curve** (`getPriceMultiplier()` = ~prev target / 100) so an item
+  stays a roughly constant fraction of bankroll the whole run, instead of the old runaway 10×/stage
+  that priced you out of the shop late.
+- Design intent: each stage ≈ "engineer one big hit"; the run is a **big-hit gambling climb**, not a
+  steady +EV grind (×10,000 in ~24 spins is not grindable — see `.claude/tools/EconSim.java`).
 
 ## Dependencies
 
@@ -121,15 +126,31 @@ amount × min(1, Σ listener refund fractions)                                  
 Development session notes are stored in `.claude/notes/` with detailed summaries of work done.
 Screenshots documenting progress are in `.claude/screenshots/` with timestamp filenames (YYYY-MM-DD-HH-MM.png).
 
-**Latest session:** `2026-06-21-freeze-chance-session.md` - Committed the event layer
-(`00a65ef`), then added Freeze chance, three fortunes (Interest, Comeback Kid, Streak Bonus),
-the **multi-ball spin system** + Double Ball, and visual polish (transparent icons, grey ball,
-themed fortune borders). All committed (`b0d158e`) **and pushed**. Verified via a headless payout
-test + a live two-ball spin (both temp harnesses removed). Earlier: the event-layer session
-`2026-06-20-event-layer-and-chances-session.md` and graphics overhaul
-`2026-06-20-graphics-polish-session.md`.
+**Latest session:** `2026-06-26-economy-balance-session.md` - Major **economy/balance overhaul** to
+kill "the first shop decides the run". Diagnosed via a headless Monte-Carlo sim (`.claude/tools/EconSim.java`):
+×10,000 in ~24 spins isn't grindable, so the run is a **big-hit gambling climb** (identity kept).
+Shipped: 8-stage gentle curve + target-tied pricing; capped the two compounding engines (Paint It
+Black, Lightning Storm); Segment Remover per-stage budget {5,3,1} + remover-count badge; restock
+bug fix + escalating-price restocks (no cap); **item rarity + stage-gating** (the structural
+first-shop fix); Freeze → patch-freeze; MirrorFate non-number crash fix. All committed + pushed.
+**Next:** (1) boss system (debuffs + drop legendary items), (2) major graphics update. Earlier:
+`2026-06-22-character-select-session.md` (run-start characters), `2026-06-21-freeze-chance-session.md`
+(event layer + multi-ball), and the two `2026-06-20-*` graphics/event-layer sessions.
 
 ## Current State / Next Ideas
+
+### 0. Next session priorities (planned 2026-06-26)
+
+**(1) Boss system.** Decide who/what bosses are + the per-round **debuffs** they impose (reuse the
+event layer: a boss = a temporary `GameEventListener` + optional wheel mutation — e.g. "red pays
+nothing", "house skims 20%", "enlarged 0-zone", "outside bets only", "0 un-removable"). Bosses
+**drop legendary items** (pick one-of-N) → then remove LEGENDARY from the shop pool (one-line change
+in `RandomItemGenerator`; LEGENDARY currently = Crystal Ball, gated to stage 5 as interim home).
+
+**(2) Major graphics update** (prototype → full game; expected to be large). Per-item visual effects
+(freeze effect, lightning effect, ...), **highlight selectable segments** (esp. the Freeze patch —
+no on-wheel highlight yet), **screen transitions**, **sound effects** (none currently), **resizable
+window / multiple resolutions / widescreen**, and reconsider whether to overhaul the whole layout.
 
 ### 1. More Items
 

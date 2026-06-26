@@ -35,12 +35,20 @@ public class GameState {
     private WheelSelectChance pendingChanceItem = null;
     private Segment crystalBallSegment = null;
 
+    // Progression curve. Stage S (1-indexed) must reach STAGE_TARGETS[S-1] by the end of its
+    // STAGE_ROUNDS[S-1] spins; clearing the last stage (== finalGoal) wins the run. Stage 1 is a
+    // gentle setup stage (no brutal luck leap) and the goal ramps smoothly (~3.2x/stage) to $1M,
+    // with more spins in the later, harder stages. More, smaller stages => more shop visits =>
+    // more chances to build item synergies.
+    private static final long[] STAGE_TARGETS = {150, 500, 1500, 5000, 16000, 55000, 200000, 1_000_000};
+    private static final int[]  STAGE_ROUNDS  = {  4,   4,    4,    5,     5,     5,      6,         6};
+
     // Progression
     private int currentStage = 1;
     private int currentRound = 1;
-    private int roundsInStage = 3;
-    private long requiredChips = 500; // Goal for first stage
-    private final long finalGoal = 1_000_000;
+    private int roundsInStage = STAGE_ROUNDS[0];
+    private long requiredChips = STAGE_TARGETS[0];
+    private final long finalGoal = STAGE_TARGETS[STAGE_TARGETS.length - 1];
 
     public enum GameStateMode {
         DEFAULT,
@@ -340,8 +348,7 @@ public class GameState {
         roundsInStage = getRoundsForStage(currentStage);
         requiredChips = getRequiredChipsForStage(currentStage);
 
-        shop.reset();
-        shop.updatePrices(getPriceMultiplier(currentStage));
+        shop.startStage(currentStage, getPriceMultiplier(currentStage));
     }
 
     public int getScaledRestockPrice() {
@@ -353,24 +360,22 @@ public class GameState {
     }
 
     private int getRoundsForStage(int stage) {
-        if (stage < 3) return 3;
-        if (stage < 5) return 4;
-        return 5;
+        return STAGE_ROUNDS[Math.min(stage, STAGE_ROUNDS.length) - 1];
     }
 
     private long getRequiredChipsForStage(int stage) {
-        switch (stage) {
-            case 1: return 500;
-            case 2: return 2000;
-            case 3: return 8000;
-            case 4: return 40000;
-            case 5: return 200000;
-            default: return finalGoal;
-        }
+        return STAGE_TARGETS[Math.min(stage, STAGE_TARGETS.length) - 1];
     }
 
+    /**
+     * Prices scale with the target curve so an item stays a roughly constant fraction of your
+     * bankroll across the whole run, instead of the old runaway 10x/stage that priced you out of
+     * the shop in the late game. The opening shop (stage 1) uses base prices; every later shop
+     * opens having just cleared the previous stage, so we scale by that stage's target.
+     */
     private int getPriceMultiplier(int stage) {
-        return (int) Math.pow(10, stage - 1);
+        if (stage <= 1) return 1;
+        return Math.max(1, Math.round(STAGE_TARGETS[stage - 2] / 100f));
     }
 
     public int getCurrentStage() {
