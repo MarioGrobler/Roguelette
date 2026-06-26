@@ -1,6 +1,8 @@
 package de.mario.roguelette.render.item;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -13,6 +15,7 @@ import de.mario.roguelette.items.ShopItem;
 import de.mario.roguelette.items.chances.ChanceShopItem;
 import de.mario.roguelette.items.fortunes.FortuneShopItem;
 import de.mario.roguelette.items.segments.AddSegmentShopItem;
+import de.mario.roguelette.items.segments.DeleteSegmentShopItem;
 import de.mario.roguelette.items.segments.SegmentShopItem;
 import de.mario.roguelette.render.Renderable;
 import de.mario.roguelette.render.RoundedRectRenderer;
@@ -207,16 +210,52 @@ public class ShopRenderer implements Renderable {
                 font.draw(batch, "$" + record.shopItem.getCost(), x, y);
             }
             batch.end();
+
+            // Segment Remover: badge with how many removals remain this shop (top-right of the item)
+            if (record.shopItem instanceof DeleteSegmentShopItem && record.renderable instanceof SegmentDrawBase) {
+                SegmentDrawBase sd = (SegmentDrawBase) record.renderable;
+                float r = sd.getOuterRadius();
+                // Same absolute size as the active-item duration badge: those items are screenH/15
+                // wide with thickness=width/10 and badge radius=2.5*thickness => screenH/60.
+                // Positioned at the top-right corner of the trash icon (icon box top-right ~ +0.14r,+0.93r).
+                float badgeRadius = Gdx.graphics.getHeight() / 60f;
+                drawCountBadge(sd.getCenterX() + r * 0.14f, sd.getCenterY() + r * 0.95f, badgeRadius,
+                    gameState.getShop().getRemainingDeletes());
+            }
         }
 
         // button texts
         batch.begin();
         font.getData().setScale(2f);
-        GlyphLayout layoutRestock = new GlyphLayout(font, "Restock $" + gameState.getScaledRestockPrice() , Color.WHITE, 0, Align.center, false);
+        GlyphLayout layoutRestock = new GlyphLayout(font, "Restock $" + gameState.getScaledRestockPrice(), Color.WHITE, 0, Align.center, false);
         font.draw(batch, layoutRestock, roundedRectRendererButtonRestock.getBounds().x + roundedRectRendererButtonRestock.getBounds().width/2f, bounds.y + roundedRectRendererButtonRestock.getBounds().height / 2f + layoutRestock.height/2f);
 
         GlyphLayout layoutContinue = new GlyphLayout(font, "Continue (Enter)", Color.WHITE, 0, Align.center, false);
         font.draw(batch, layoutContinue, roundedRectRendererButtonContinue.getBounds().x + roundedRectRendererButtonContinue.getBounds().width/2f, bounds.y + roundedRectRendererButtonContinue.getBounds().height / 2f + layoutRestock.height/2f);
+        batch.end();
+    }
+
+    /** Draws a "number in a circle" badge identical in style/size to the active-item duration badge. */
+    private void drawCountBadge(float centerX, float centerY, float radius, int number) {
+        boolean none = number <= 0;
+
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(none ? new Color(0.82f, 0.28f, 0.28f, 0.9f) : new Color(1f, 1f, 1f, 0.9f));
+        shapeRenderer.circle(centerX, centerY, radius);
+        shapeRenderer.end();
+
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+        shapeRenderer.setColor(0f, 0f, 0f, 0.8f);
+        shapeRenderer.circle(centerX, centerY, radius);
+        shapeRenderer.end();
+        Gdx.gl.glDisable(GL20.GL_BLEND);
+
+        font.getData().setScale(1.5f);
+        GlyphLayout layout = new GlyphLayout(font, String.valueOf(number), none ? Color.WHITE : Color.BLACK, 0, Align.center, false);
+        batch.begin();
+        font.draw(batch, layout, centerX, centerY + layout.height / 2f);
         batch.end();
     }
 

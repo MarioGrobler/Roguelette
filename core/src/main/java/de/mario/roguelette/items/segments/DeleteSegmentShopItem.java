@@ -1,6 +1,7 @@
 package de.mario.roguelette.items.segments;
 
 import de.mario.roguelette.GameState;
+import de.mario.roguelette.items.Shop;
 
 public class DeleteSegmentShopItem extends SegmentShopItem {
 
@@ -47,9 +48,14 @@ public class DeleteSegmentShopItem extends SegmentShopItem {
             gameState.getPlayer().pay(getCost());
             gameState.setPendingDeleteItem(null);
             gameState.popState();
-            gameState.getShop().increaseNumOfSoldDeletes();
-            //sold = true; // never sell this item, instead increase price
-            cost *= 2;
+
+            Shop shop = gameState.getShop();
+            shop.registerDelete();
+            if (shop.canDelete()) {
+                cost = shop.currentDeletePrice(); // price doubles for the next removal this stage
+            } else {
+                sold = true; // this stage's removal budget is spent
+            }
             return true;
         }
         return false;

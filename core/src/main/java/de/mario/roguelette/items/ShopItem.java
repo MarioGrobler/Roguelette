@@ -6,6 +6,7 @@ import de.mario.roguelette.Player;
 public abstract class ShopItem {
     protected int cost;
     protected boolean sold = false;
+    protected Rarity rarity = Rarity.COMMON; // items override in their constructor, like cost
 
     public abstract String getShortDescription();
     public abstract String getDescription();
@@ -31,6 +32,10 @@ public abstract class ShopItem {
 
     public boolean isSold() {
         return sold;
+    }
+
+    public Rarity getRarity() {
+        return rarity;
     }
 
 }
