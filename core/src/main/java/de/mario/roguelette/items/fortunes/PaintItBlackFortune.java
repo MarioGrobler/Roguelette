@@ -14,7 +14,14 @@ import java.util.List;
 
 public class PaintItBlackFortune extends FortuneShopItem {
 
+    // Bounded so this is a strong synergy piece, not an unbounded solo win-engine. Over a long
+    // run an uncapped +0.5/turn black payout AND ever-more black segments turns a black color bet
+    // into a near-guaranteed high-multiplier machine; the caps make it a defined power level.
+    private static final float MAX_BLACK_MODIFIER = 2.0f; // black color bets pay at most +2 (up to 4x)
+    private static final int   MAX_PAINTS = 6;            // total extra segments turned black over a run
+
     private float blackModifier = 0f;
+    private int paints = 0;
 
     public PaintItBlackFortune() {
         super(new FortuneRenderInfo(new Texture(Gdx.files.internal("icon/paintItBlack.png")), Color.GOLDENROD, new Color(0.12f, 0.12f, 0.15f, 1f)));
@@ -23,19 +30,22 @@ public class PaintItBlackFortune extends FortuneShopItem {
 
     @Override
     public void onTurnChange(final GameState gameState) {
-        List<Segment> nonBlacks = new ArrayList<>();
-        for (Segment segment : gameState.getWheel().getSegments()) {
-            if (segment.getColor() != Segment.SegmentColor.BLACK) {
-                nonBlacks.add(segment);
+        if (paints < MAX_PAINTS) {
+            List<Segment> nonBlacks = new ArrayList<>();
+            for (Segment segment : gameState.getWheel().getSegments()) {
+                if (segment.getColor() != Segment.SegmentColor.BLACK) {
+                    nonBlacks.add(segment);
+                }
+            }
+
+            if (!nonBlacks.isEmpty()) {
+                int rnd = MathUtils.random(0, nonBlacks.size() - 1);
+                nonBlacks.get(rnd).setColor(Segment.SegmentColor.BLACK);
+                paints++;
             }
         }
 
-        if (!nonBlacks.isEmpty()) {
-            int rnd = MathUtils.random(0, nonBlacks.size() - 1);
-            nonBlacks.get(rnd).setColor(Segment.SegmentColor.BLACK);
-        }
-
-        blackModifier += 0.5f;
+        blackModifier = Math.min(MAX_BLACK_MODIFIER, blackModifier + 0.5f);
     }
 
     @Override
@@ -56,6 +66,8 @@ public class PaintItBlackFortune extends FortuneShopItem {
 
     @Override
     public String getDescription() {
-        return "Every turn, paints a random segment of the wheel black and increases the payout multiplier of black color bets by 0.5.\nCurrent bonus: " + blackModifier;
+        return "Every turn, paints a random segment of the wheel black (up to " + MAX_PAINTS
+            + ") and increases the payout of black color bets by 0.5 (up to +" + (int) MAX_BLACK_MODIFIER
+            + ").\nCurrent bonus: " + blackModifier;
     }
 }
