@@ -3,16 +3,22 @@ package de.mario.roguelette.items.chances;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.math.MathUtils;
 import de.mario.roguelette.GameState;
 import de.mario.roguelette.events.LandingContext;
 
 /**
- * The player selects a segment of the wheel; while active, the ball is guaranteed to land on
- * that frozen segment. Demonstrates combining the segment-select flow ({@link WheelSelectChance})
- * with the landing hook of the event layer.
+ * The player selects a segment of the wheel; while active, the ball is guaranteed to land somewhere
+ * within a frozen <em>patch</em> of {@link #FREEZE_RADIUS} segments either side of it (not a single
+ * segment). Because the wheel order is scrambled — adjacent segments are unrelated numbers of mixed
+ * colour — knowing the landing patch can't be cashed in as a clean single-number 36x; the player has
+ * to hedge across the patch for a much smaller guaranteed return. This keeps Freeze strong without
+ * being an auto-win (it used to force one exact, chosen segment).
  */
 public class FreezeChance extends PendingChanceShopItem implements WheelSelectChance {
-    private int frozenIndex = -1; // -1: not selected yet
+    private static final int FREEZE_RADIUS = 2; // patch = selected segment +/- this many neighbours
+
+    private int selectedIndex = -1; // -1: not selected yet
 
     public FreezeChance() {
         super(new ChanceRenderInfo(new Texture(Gdx.files.internal("icon/freeze.png")),
@@ -22,9 +28,24 @@ public class FreezeChance extends PendingChanceShopItem implements WheelSelectCh
 
     @Override
     public void onBallLanded(final GameState gameState, final LandingContext landing) {
-        if (frozenIndex >= 0 && frozenIndex < landing.getWheel().size()) {
-            landing.setSegmentIndex(frozenIndex);
+        int size = landing.getWheel().size();
+        if (selectedIndex < 0 || size <= 0) {
+            return;
         }
+        int center = ((selectedIndex % size) + size) % size;
+        // If the natural landing is already inside the frozen patch, leave it; otherwise redirect
+        // to a uniformly random segment within the patch.
+        if (circularDistance(landing.getSegmentIndex(), center, size) <= FREEZE_RADIUS) {
+            return;
+        }
+        int offset = MathUtils.random(-FREEZE_RADIUS, FREEZE_RADIUS);
+        landing.setSegmentIndex(((center + offset) % size + size) % size);
+    }
+
+    /** Shortest distance between two indices around a wheel of the given size. */
+    private static int circularDistance(int a, int b, int size) {
+        int d = Math.abs(a - b) % size;
+        return Math.min(d, size - d);
     }
 
     @Override
@@ -34,10 +55,11 @@ public class FreezeChance extends PendingChanceShopItem implements WheelSelectCh
 
     @Override
     public String getDescription() {
-        if (frozenIndex == -1) {
-            return "Select a segment to freeze. The ball is guaranteed to land on that segment. Lasts for one turn.";
+        if (selectedIndex == -1) {
+            return "Select a segment to freeze. The ball is guaranteed to land within " + FREEZE_RADIUS
+                + " segments of it (a frozen patch). Lasts for one turn.";
         }
-        return "The ball is frozen to land on the selected segment.";
+        return "The ball is frozen to land within the selected patch (+/-" + FREEZE_RADIUS + " segments).";
     }
 
     @Override
@@ -48,7 +70,7 @@ public class FreezeChance extends PendingChanceShopItem implements WheelSelectCh
 
     @Override
     public void onActivate(final GameState gameState, int segmentIndex) {
-        this.frozenIndex = segmentIndex;
+        this.selectedIndex = segmentIndex;
 
         gameState.popState();
         gameState.setPendingChanceItem(null);

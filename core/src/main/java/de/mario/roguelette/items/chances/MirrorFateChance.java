@@ -7,7 +7,9 @@ import com.badlogic.gdx.math.MathUtils;
 import de.mario.roguelette.GameState;
 import de.mario.roguelette.betting.NumberBet;
 import de.mario.roguelette.events.BetResolution;
+import de.mario.roguelette.wheel.JokerNumberRangeSegment;
 import de.mario.roguelette.wheel.NumberSegment;
+import de.mario.roguelette.wheel.RouletteRules;
 import de.mario.roguelette.wheel.Segment;
 import de.mario.roguelette.wheel.effects.NumberEffect;
 
@@ -42,7 +44,7 @@ public class MirrorFateChance extends PendingChanceShopItem implements WheelSele
     @Override
     public String getDescription() {
         if (mirrorNumber == -1) {
-            return "Select a number segment. Selects randomly up to 10 number segments to copy the number of the chosen one. Increases the base payout multiplier for number bets involving the chosen number to 50. Lasts for one turn.";
+            return "Select any segment. Up to 10 random number segments copy a number drawn from it, and the base payout multiplier for number bets on that number is raised to 50. Lasts for one turn.";
         }
         return "The base payout multiplier for number bets on " + mirrorNumber + " is increased to 50.";
     }
@@ -53,9 +55,35 @@ public class MirrorFateChance extends PendingChanceShopItem implements WheelSele
         gameState.setPendingChanceItem(this);
     }
 
+    /**
+     * Derives the number to mirror from any selected segment, so non-number segments don't crash
+     * (and can be played for synergy): a number segment gives its number, a range segment a random
+     * number inside its range, a colour joker a random number of that colour.
+     */
+    private int deriveNumber(final Segment segment) {
+        if (segment instanceof NumberSegment) {
+            return ((NumberSegment) segment).getCurrentNumber();
+        }
+        if (segment instanceof JokerNumberRangeSegment) {
+            JokerNumberRangeSegment range = (JokerNumberRangeSegment) segment;
+            return MathUtils.random(range.getMin(), range.getMax());
+        }
+        // colour joker (or anything else): pick a random number matching the segment's colour
+        List<Integer> candidates = new ArrayList<>();
+        for (int n = 0; n <= 36; n++) {
+            if (RouletteRules.getStandardColor(n) == segment.getCurrentColor()) {
+                candidates.add(n);
+            }
+        }
+        if (candidates.isEmpty()) {
+            return MathUtils.random(0, 36);
+        }
+        return candidates.get(MathUtils.random(candidates.size() - 1));
+    }
+
     @Override
     public void onActivate(final GameState gameState, int segmentIndex) {
-        this.mirrorNumber = ((NumberSegment) gameState.getWheel().getSegments().get(segmentIndex)).getCurrentNumber();
+        this.mirrorNumber = deriveNumber(gameState.getWheel().getSegments().get(segmentIndex));
 
         List<NumberSegment> numberSegments = new ArrayList<>();
         for (Segment segment : gameState.getWheel().getSegments()) {
