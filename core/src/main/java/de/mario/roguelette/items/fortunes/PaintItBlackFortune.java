@@ -22,6 +22,7 @@ public class PaintItBlackFortune extends FortuneShopItem {
 
     private float blackModifier = 0f;
     private int paints = 0;
+    private int lastPaintedStage = 0; // recolour at most once per stage, not once per round
 
     public PaintItBlackFortune() {
         super(new FortuneRenderInfo(new Texture(Gdx.files.internal("icon/paintItBlack.png")), Color.GOLDENROD, new Color(0.12f, 0.12f, 0.15f, 1f)));
@@ -30,18 +31,23 @@ public class PaintItBlackFortune extends FortuneShopItem {
 
     @Override
     public void onTurnChange(final GameState gameState) {
-        if (paints < MAX_PAINTS) {
-            List<Segment> nonBlacks = new ArrayList<>();
-            for (Segment segment : gameState.getWheel().getSegments()) {
-                if (segment.getColor() != Segment.SegmentColor.BLACK) {
-                    nonBlacks.add(segment);
+        // Recolour at most once per STAGE (not every round): the wheel tilts black slowly over the
+        // run instead of going near-monochrome within the first couple of stages.
+        if (gameState.getCurrentStage() != lastPaintedStage) {
+            lastPaintedStage = gameState.getCurrentStage();
+            if (paints < MAX_PAINTS) {
+                List<Segment> nonBlacks = new ArrayList<>();
+                for (Segment segment : gameState.getWheel().getSegments()) {
+                    if (segment.getColor() != Segment.SegmentColor.BLACK) {
+                        nonBlacks.add(segment);
+                    }
                 }
-            }
 
-            if (!nonBlacks.isEmpty()) {
-                int rnd = MathUtils.random(0, nonBlacks.size() - 1);
-                nonBlacks.get(rnd).setColor(Segment.SegmentColor.BLACK);
-                paints++;
+                if (!nonBlacks.isEmpty()) {
+                    int rnd = MathUtils.random(0, nonBlacks.size() - 1);
+                    nonBlacks.get(rnd).setColor(Segment.SegmentColor.BLACK);
+                    paints++;
+                }
             }
         }
 
@@ -66,8 +72,8 @@ public class PaintItBlackFortune extends FortuneShopItem {
 
     @Override
     public String getDescription() {
-        return "Every turn, paints a random segment of the wheel black (up to " + MAX_PAINTS
-            + ") and increases the payout of black color bets by 0.5 (up to +" + (int) MAX_BLACK_MODIFIER
+        return "Each stage, paints a random segment of the wheel black (up to " + MAX_PAINTS
+            + "). Every turn, increases the payout of black color bets by 0.5 (up to +" + (int) MAX_BLACK_MODIFIER
             + ").\nCurrent bonus: " + blackModifier;
     }
 }

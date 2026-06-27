@@ -2,7 +2,6 @@ package de.mario.roguelette.items;
 
 import com.badlogic.gdx.math.MathUtils;
 import de.mario.roguelette.items.chances.ChanceShopItem;
-import de.mario.roguelette.items.chances.CrystalBallChance;
 import de.mario.roguelette.items.chances.DoubleBallChance;
 import de.mario.roguelette.items.chances.DoubleNextWinChance;
 import de.mario.roguelette.items.chances.FreezeChance;
@@ -106,7 +105,7 @@ public class RandomItemGenerator {
         List<ChanceShopItem> pool = new ArrayList<>();
 
         pool.add(rar(new DoubleNextWinChance(), Rarity.UNCOMMON));
-        pool.add(rar(new CrystalBallChance(), Rarity.LEGENDARY));
+        // Crystal Ball is now a boss-exclusive legendary (see LegendaryPool); no longer in the shop.
         pool.add(rar(new MirrorFateChance(), Rarity.UNCOMMON));
         pool.add(rar(new InsuranceChance(), Rarity.COMMON));
         pool.add(rar(new LuckySevenChance(), Rarity.UNCOMMON));

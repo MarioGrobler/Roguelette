@@ -1,10 +1,14 @@
 package de.mario.roguelette;
 
+import de.mario.roguelette.boss.Boss;
+import de.mario.roguelette.boss.BossRoster;
 import de.mario.roguelette.events.BetResolution;
 import de.mario.roguelette.events.GameEventListener;
 import de.mario.roguelette.events.LandingContext;
 import de.mario.roguelette.events.SpinContext;
+import de.mario.roguelette.items.LegendaryPool;
 import de.mario.roguelette.items.Shop;
+import de.mario.roguelette.items.ShopItem;
 import de.mario.roguelette.items.chances.ChanceShopItem;
 import de.mario.roguelette.items.chances.WheelSelectChance;
 import de.mario.roguelette.items.segments.DeleteSegmentShopItem;
@@ -35,6 +39,20 @@ public class GameState {
     private WheelSelectChance pendingChanceItem = null;
     private Segment crystalBallSegment = null;
 
+    // Boss fight state. A boss gates the end of stages 2/4/6/8: after clearing the stage's normal
+    // rounds the player must, within a few spins, GAIN bossGoal chips while the boss's debuff is
+    // active. currentBoss is set for the whole encounter (intro -> fight -> reward); bossListeners is
+    // non-null only while the fight itself is in progress (so the stage-clearing spin and the intro
+    // screen are not affected by the debuff). The win condition is a gain (not an absolute total), so
+    // doing nothing fails by default and the boss can't be skipped by arriving over target.
+    private Boss currentBoss = null;
+    private List<GameEventListener> bossListeners = null;
+    private int bossSpinsRemaining = 0;
+    private long bossStartBalance = 0;
+    private long bossGoal = 0;
+    private List<ShopItem> bossRewardOffer = null;
+    private ShopItem pendingReward = null; // a chosen reward waiting for the player to free an inventory slot
+
     // Progression curve. Stage S (1-indexed) must reach STAGE_TARGETS[S-1] by the end of its
     // STAGE_ROUNDS[S-1] spins; clearing the last stage (== finalGoal) wins the run. Stage 1 is a
     // gentle setup stage (no brutal luck leap) and the goal ramps smoothly (~3.2x/stage) to $1M,
@@ -56,7 +74,10 @@ public class GameState {
         DELETE_SEGMENT_SELECTING,
         CHANCE_SEGMENT_SELECTING,
         SHOW_CRYSTAL_BALL,
-        SHOP_OPEN
+        SHOP_OPEN,
+        BOSS_INTRO,   // the boss is revealed; click to begin the fight
+        BOSS_FIGHT,   // betting/spinning against the boss (like DEFAULT, but the debuff is live)
+        BOSS_REWARD   // boss defeated; pick one of the offered legendaries
     }
 
     public interface TimeoutListener {
@@ -202,6 +223,10 @@ public class GameState {
         listeners.addAll(player.getCharacterListeners());
         listeners.addAll(player.getInventory().getFortunes());
         listeners.addAll(pendingChanceManager.getActiveChances());
+        // the active boss's debuff resolves last, on top of the player's own engine
+        if (bossListeners != null) {
+            listeners.addAll(bossListeners);
+        }
         return listeners;
     }
 
@@ -328,16 +353,173 @@ public class GameState {
         if (currentRound > roundsInStage) {
             // stage succeeded
             if (player.getBalance() >= requiredChips) {
-                if (player.getBalance() >= finalGoal) {
-                    // you win!
-                    game.setScreen(new YouWinScreen(game, game.getScreen()));
-                    return;
+                if (BossRoster.hasBoss(currentStage)) {
+                    // a boss gates this stage: defer the win/shop transition until it is beaten
+                    startBossRound();
+                } else {
+                    advancePastStage(game);
                 }
-                startShopPhase();
             } else { // game over
                 game.setScreen(new GameOverScreen(game));
             }
         }
+    }
+
+    /** Win the run (final goal cleared) or open the shop for the next stage. */
+    private void advancePastStage(final RougeletteGame game) {
+        if (player.getBalance() >= finalGoal) {
+            game.setScreen(new YouWinScreen(game, game.getScreen()));
+        } else {
+            startShopPhase();
+        }
+    }
+
+    // ----- Boss encounter -----
+
+    /**
+     * Begins a boss encounter for the just-cleared stage: rolls the boss, snapshots the balance and
+     * computes the gain goal, and shows the intro. The debuff is <em>not</em> activated yet (see
+     * {@link #bossListeners}) so the stage-clearing spin and the intro screen play clean.
+     */
+    private void startBossRound() {
+        currentBoss = BossRoster.forStage(currentStage);
+        bossStartBalance = player.getBalance();
+        bossGoal = Math.max(1, Math.round(bossStartBalance * currentBoss.getGoalFraction()));
+        bossSpinsRemaining = currentBoss.getSpinCount();
+        bossListeners = null;
+        setState(GameStateMode.BOSS_INTRO);
+    }
+
+    /** Dismisses the intro and starts the fight proper: the debuff and any wheel mutation go live. */
+    public void beginBossFight() {
+        if (currentBoss == null) {
+            return;
+        }
+        bossListeners = currentBoss.createListeners();
+        currentBoss.applyWheelMutation(wheel);
+        setState(GameStateMode.BOSS_FIGHT);
+    }
+
+    /** True only while a boss fight is actually in progress (debuff live). */
+    public boolean isBossFightActive() {
+        return bossListeners != null;
+    }
+
+    /**
+     * Resolves one spin of the boss fight, called after the spin's payout and turn-change effects.
+     * Decrements the remaining spins and checks the gain goal: reaching it defeats the boss (offer
+     * the reward), running out of spins (or going broke) loses the run. Otherwise the fight continues.
+     */
+    public void resolveBossSpin(final RougeletteGame game) {
+        if (player.isDead()) {
+            endBossFight();
+            game.setScreen(new GameOverScreen(game));
+            return;
+        }
+        bossSpinsRemaining--;
+        long gained = player.getBalance() - bossStartBalance;
+        if (gained >= bossGoal) {
+            // boss defeated -> offer the legendary reward
+            endBossFight();
+            bossRewardOffer = LegendaryPool.drawOffer();
+            setState(GameStateMode.BOSS_REWARD);
+        } else if (bossSpinsRemaining <= 0) {
+            // out of spins, goal not met -> the boss wins
+            endBossFight();
+            game.setScreen(new GameOverScreen(game));
+        }
+        // otherwise: stay in the fight (caller restores BOSS_FIGHT)
+    }
+
+    /** Tears down the live debuff and reverts any wheel mutation (keeps currentBoss for the reward UI). */
+    private void endBossFight() {
+        if (currentBoss != null) {
+            currentBoss.revertWheelMutation(wheel);
+        }
+        bossListeners = null;
+    }
+
+    /**
+     * Picks a boss reward. If the chosen item's inventory section has room it is granted and the run
+     * advances; otherwise the choice is held as {@link #pendingReward} and the player must discard an
+     * item to free a slot (see {@link #tryClaimPendingReward}).
+     */
+    public void chooseBossReward(final RougeletteGame game, final int index) {
+        if (bossRewardOffer == null || pendingReward != null || index < 0 || index >= bossRewardOffer.size()) {
+            return;
+        }
+        ShopItem chosen = bossRewardOffer.get(index);
+        if (sectionFull(chosen)) {
+            pendingReward = chosen; // wait for the player to free a slot
+            return;
+        }
+        LegendaryPool.grant(this, chosen);
+        finishBossReward(game);
+    }
+
+    /** After a discard frees a slot, grants the held reward (if any) and advances the run. */
+    public void tryClaimPendingReward(final RougeletteGame game) {
+        if (pendingReward != null && !sectionFull(pendingReward)) {
+            LegendaryPool.grant(this, pendingReward);
+            finishBossReward(game);
+        }
+    }
+
+    private void finishBossReward(final RougeletteGame game) {
+        bossRewardOffer = null;
+        pendingReward = null;
+        currentBoss = null;
+        advancePastStage(game);
+    }
+
+    private boolean sectionFull(final ShopItem item) {
+        if (item instanceof de.mario.roguelette.items.fortunes.FortuneShopItem) {
+            return player.getInventory().fortunesFull();
+        }
+        if (item instanceof de.mario.roguelette.items.chances.ChanceShopItem) {
+            return player.getInventory().chancesFull();
+        }
+        return false;
+    }
+
+    /** Whether a chosen boss reward is waiting on the player to discard an item to make room. */
+    public boolean isAwaitingRewardDiscard() {
+        return pendingReward != null;
+    }
+
+    public ShopItem getPendingReward() {
+        return pendingReward;
+    }
+
+    /** Discards (no refund) the fortune at the given inventory index. */
+    public void discardFortune(final int index) {
+        player.getInventory().popFortuneAtIndex(index);
+    }
+
+    /** Discards (no refund) the chance at the given inventory index. */
+    public void discardChance(final int index) {
+        player.getInventory().popChanceAtIndex(index);
+    }
+
+    public Boss getCurrentBoss() {
+        return currentBoss;
+    }
+
+    public int getBossSpinsRemaining() {
+        return bossSpinsRemaining;
+    }
+
+    public long getBossGoal() {
+        return bossGoal;
+    }
+
+    /** Chips gained so far this boss fight (can be negative if the player is down). */
+    public long getBossGained() {
+        return player.getBalance() - bossStartBalance;
+    }
+
+    public List<ShopItem> getBossRewardOffer() {
+        return bossRewardOffer;
     }
 
     private void startShopPhase() {

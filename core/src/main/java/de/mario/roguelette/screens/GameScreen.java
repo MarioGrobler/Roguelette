@@ -29,6 +29,7 @@ import de.mario.roguelette.items.chances.WheelSelectChance;
 import de.mario.roguelette.items.segments.AddSegmentShopItem;
 import de.mario.roguelette.items.segments.DeleteSegmentShopItem;
 import de.mario.roguelette.render.BackgroundRenderer;
+import de.mario.roguelette.render.BossRenderer;
 import de.mario.roguelette.render.bet.BettingAreaRenderer;
 import de.mario.roguelette.render.bet.ChipRenderer;
 import de.mario.roguelette.render.item.ActiveChanceEffectsRenderer;
@@ -66,6 +67,7 @@ public class GameScreen implements Screen {
     private InventoryRenderer inventoryRenderer;
     private ActiveChanceEffectsRenderer activeChanceEffectsRenderer;
     private CrystalBallRenderer crystalBallRenderer;
+    private BossRenderer bossRenderer;
 
     private GameState gameState;
 
@@ -145,6 +147,8 @@ public class GameScreen implements Screen {
         float crystalStartX = Gdx.graphics.getWidth() / 2f - crystalWidth / 2f;
         float crystalStartY = Gdx.graphics.getHeight() / 2f - crystalHeight / 2f;
         crystalBallRenderer = new CrystalBallRenderer(shapeRenderer, batch, font, gameState, new Rectangle(crystalStartX, crystalStartY, crystalWidth, crystalHeight));
+
+        bossRenderer = new BossRenderer(shapeRenderer, batch, font, gameState);
     }
 
     @Override
@@ -194,7 +198,16 @@ public class GameScreen implements Screen {
         float goalX = 20 + balanceLayout.width + 40; // 40px spacing
         font.draw(batch, "Goal: $" + gameState.getRequiredChips(), goalX, Gdx.graphics.getHeight() - 20);
         font.getData().setScale(2f);
-        String s = gameState.isStateInStack(GameState.GameStateMode.SHOP_OPEN) ? "Shopping Time!" : String.format("Stage: %d, Round %d/%d", gameState.getCurrentStage(), gameState.getCurrentRound(), gameState.getRoundsInStage());
+        String s;
+        if (gameState.getCurrentBoss() != null) {
+            // covers the whole encounter (intro/fight/reward) incl. the SPINNING frames mid-fight,
+            // which otherwise fell through to a stale "Round n+1/n"
+            s = "Boss Fight!";
+        } else if (gameState.isStateInStack(GameState.GameStateMode.SHOP_OPEN)) {
+            s = "Shopping Time!";
+        } else {
+            s = String.format("Stage: %d, Round %d/%d", gameState.getCurrentStage(), gameState.getCurrentRound(), gameState.getRoundsInStage());
+        }
         font.draw(batch, s, 20, Gdx.graphics.getHeight() - 70);
 
 
@@ -206,6 +219,15 @@ public class GameScreen implements Screen {
             font.draw(batch, "Select segment to activate chance", Gdx.graphics.getWidth() / 2f + 35, Gdx.graphics.getHeight() / 2f * 1.2f + 60);
         }
         batch.end();
+
+        // boss overlays (intro card / in-fight HUD / reward picker)
+        bossRenderer.render();
+
+        // during a boss-reward overflow, redraw the inventory above the dim so its discard buttons work
+        if (gameState.getCurrentState() == GameState.GameStateMode.BOSS_REWARD
+            && gameState.isAwaitingRewardDiscard()) {
+            inventoryRenderer.render();
+        }
 
         // handle input
         handleInput();
@@ -316,6 +338,9 @@ public class GameScreen implements Screen {
     private void startSpin() {
         gameState.getPlayer().resetHand();
 
+        // whether this spin counts toward an active boss fight (captured before resolution can end it)
+        final boolean bossFight = gameState.isBossFightActive();
+
         float selectAngle = MathUtils.random(0f, 360f); // segment at this angle will be selected
         float targetAngle = MathUtils.random(0f, 360f); // rotation where this segment is going to be at the end
 
@@ -372,12 +397,22 @@ public class GameScreen implements Screen {
         wheelRenderer.spinWheelToTarget(wheelRotation);
         wheelRenderer.spinBalls(ballTargets, ballTints, () -> {
             // turn change
-            gameState.setState(GameState.GameStateMode.DEFAULT);
             gameState.getPlayer().pay(gameState.getBetManager().totalAmount());
             gameState.applyReturnOfBets(landedSegments);
-            gameState.endRound(game);
 
-            gameState.applyOnTurnChangeEffects();
+            if (bossFight) {
+                // the boss debuff's turn effects (e.g. the Leech's tithe) apply first, then we check
+                // whether this spin met the gain goal / ran out of spins
+                gameState.applyOnTurnChangeEffects();
+                gameState.resolveBossSpin(game);
+                if (gameState.isBossFightActive()) {
+                    gameState.setState(GameState.GameStateMode.BOSS_FIGHT); // fight continues
+                }
+            } else {
+                gameState.setState(GameState.GameStateMode.DEFAULT);
+                gameState.endRound(game); // may start a boss round (-> BOSS_INTRO) or open the shop
+                gameState.applyOnTurnChangeEffects();
+            }
 
             wheelRenderer.updateWheel();
             chipRenderer.updateChips();
@@ -432,10 +467,32 @@ public class GameScreen implements Screen {
         }
     }
 
+    /** @return true if a click hit an inventory discard (X) button and an item was discarded. */
+    private boolean handleInventoryDiscard(float x, float y) {
+        Optional<Integer> optFortune = inventoryRenderer.handleDiscardFortune(x, y);
+        if (optFortune.isPresent()) {
+            gameState.discardFortune(optFortune.get());
+            inventoryRenderer.updateItems();
+            activeChanceEffectsRenderer.updateChances();
+            return true;
+        }
+        Optional<Integer> optChance = inventoryRenderer.handleDiscardChance(x, y);
+        if (optChance.isPresent()) {
+            gameState.discardChance(optChance.get());
+            inventoryRenderer.updateItems();
+            activeChanceEffectsRenderer.updateChances();
+            return true;
+        }
+        return false;
+    }
+
     private void handleInputShop() {
         Vector3 touchPos = new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0);
         camera.unproject(touchPos);
         if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
+            if (handleInventoryDiscard(touchPos.x, touchPos.y)) {
+                return; // discarding an item takes precedence over buying/activating
+            }
             Optional<ShopItem> optShopItem = shopRenderer.handleLeftClick(touchPos.x, touchPos.y);
             optShopItem.ifPresent(shopItem -> {
                 // make sure that the number of wheel segments stays within the specified range
@@ -456,6 +513,31 @@ public class GameScreen implements Screen {
         }
     }
 
+    private void handleInputBossIntro() {
+        // any click begins the fight
+        gameState.beginBossFight();
+    }
+
+    private void handleInputBossReward() {
+        if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
+            Vector3 touchPos = new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0);
+            camera.unproject(touchPos);
+            if (gameState.isAwaitingRewardDiscard()) {
+                // a reward is chosen but the inventory is full: a discard frees the slot and claims it
+                if (handleInventoryDiscard(touchPos.x, touchPos.y)) {
+                    gameState.tryClaimPendingReward(game);
+                }
+                return;
+            }
+            int index = bossRenderer.getRewardIndexAt(touchPos.x, touchPos.y);
+            if (index >= 0) {
+                gameState.chooseBossReward(game, index);
+                inventoryRenderer.updateItems();
+                activeChanceEffectsRenderer.updateChances();
+            }
+        }
+    }
+
     private void handleInput() {
         if (Gdx.input.justTouched()) {
             switch (gameState.getCurrentState()) {
@@ -473,6 +555,16 @@ public class GameScreen implements Screen {
                     break;
                 case SHOP_OPEN:
                     handleInputShop();
+                    break;
+                case BOSS_INTRO:
+                    handleInputBossIntro();
+                    break;
+                case BOSS_FIGHT:
+                    // identical betting/spinning to a normal round; the boss debuff lives in the event layer
+                    handleInputDefault();
+                    break;
+                case BOSS_REWARD:
+                    handleInputBossReward();
                     break;
             }
         }
@@ -521,9 +613,12 @@ public class GameScreen implements Screen {
             case DELETE_SEGMENT_SELECTING:
             case CHANCE_SEGMENT_SELECTING:
             case DEFAULT:
+            case BOSS_FIGHT:
                 handleHoverDefault();
                 break;
 
+            default:
+                break;
         }
     }
 

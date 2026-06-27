@@ -18,7 +18,9 @@ public class ColorBet implements BetType {
 
     @Override
     public boolean isWinningSegment(Segment segment) {
-        return segment.getCurrentColor() == color;
+        // a BOTH (purple) segment counts as both red and black, so it wins either colour bet
+        Segment.SegmentColor landed = segment.getCurrentColor();
+        return landed == color || landed == Segment.SegmentColor.BOTH;
     }
 
     @Override

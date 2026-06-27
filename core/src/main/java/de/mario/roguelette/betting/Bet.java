@@ -56,7 +56,9 @@ public class Bet {
         }
 
         if (wonAny) {
-            return winnings;
+            // a winning bet never returns less than its stake: a "win" must never be a net loss,
+            // however harshly payout-reducing listeners (e.g. boss debuffs) have stacked
+            return Math.max(winnings, amount);
         }
         return amount * Math.min(1f, refundFraction);
     }
