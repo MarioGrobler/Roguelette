@@ -301,11 +301,11 @@ public class GameState {
     /**
      * @return Balance that is neither currently in hand nor on the bet table
      */
-    public int getAvailableBalance() {
+    public long getAvailableBalance() {
         return player.getBalance() - player.getCurrentlyInHand() - betManager.totalAmount();
     }
 
-    public int getBalanceMinusBets() {
+    public long getBalanceMinusBets() {
         return player.getBalance() - betManager.totalAmount();
     }
 
@@ -365,9 +365,12 @@ public class GameState {
         }
     }
 
-    /** Win the run (final goal cleared) or open the shop for the next stage. */
+    /** Win the run (final stage + its boss cleared) or open the shop for the next stage. */
     private void advancePastStage(final RougeletteGame game) {
-        if (player.getBalance() >= finalGoal) {
+        // The run is only won once the LAST stage (and its final boss) is cleared -- reaching the
+        // $1M total earlier just banks it; you must still play out the remaining stages and bosses.
+        boolean finalStageCleared = currentStage >= STAGE_TARGETS.length;
+        if (finalStageCleared && player.getBalance() >= finalGoal) {
             game.setScreen(new YouWinScreen(game, game.getScreen()));
         } else {
             startShopPhase();
@@ -383,10 +386,11 @@ public class GameState {
      */
     private void startBossRound() {
         currentBoss = BossRoster.forStage(currentStage);
-        bossStartBalance = player.getBalance();
-        bossGoal = Math.max(1, Math.round(bossStartBalance * currentBoss.getGoalFraction()));
         bossSpinsRemaining = currentBoss.getSpinCount();
         bossListeners = null;
+        // NB: the goal/start-balance snapshot is deferred to beginBossFight (see below).
+        bossStartBalance = 0;
+        bossGoal = 0;
         setState(GameStateMode.BOSS_INTRO);
     }
 
@@ -395,6 +399,12 @@ public class GameState {
         if (currentBoss == null) {
             return;
         }
+        // Snapshot the start balance HERE, not in startBossRound: the stage-clearing spin's
+        // turn-change effects (notably Interest) are applied AFTER endRound rolls the boss, so
+        // snapshotting earlier would credit that passive income to the boss goal for free
+        // (player saw e.g. "+$76/164" before the fight even began).
+        bossStartBalance = player.getBalance();
+        bossGoal = Math.max(1, Math.round(bossStartBalance * currentBoss.getGoalFraction()));
         bossListeners = currentBoss.createListeners();
         currentBoss.applyWheelMutation(wheel);
         setState(GameStateMode.BOSS_FIGHT);

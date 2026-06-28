@@ -18,7 +18,7 @@ public class TitheEffect implements GameEventListener {
 
     @Override
     public void onTurnChange(final GameState gameState) {
-        int skim = Math.round(gameState.getPlayer().getBalance() * fraction);
+        long skim = Math.round(gameState.getPlayer().getBalance() * (double) fraction);
         if (skim > 0) {
             gameState.getPlayer().pay(skim);
         }

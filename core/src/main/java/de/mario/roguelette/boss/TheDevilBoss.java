@@ -8,13 +8,13 @@ import java.util.List;
 
 /**
  * Stage-8 final boss, the last guardian of the $1,000,000. Combines two debuffs — a steep house edge
- * <em>and</em> a red ban — so the player must both bet around red and out-multiply a halving tax with
- * the engine they have spent the whole run building.
+ * <em>and</em> the destruction of the wheel's most valuable segment before every spin — so the player
+ * must out-multiply a halving tax while watching the engine they spent the whole run building get
+ * eaten piece by piece.
  */
 public class TheDevilBoss extends Boss {
 
     private static final float KEEP_FACTOR = 0.5f;  // all wins are halved
-    private static final float RED_KEEP = 0.2f;     // red wins additionally cut to 20%
     private static final float GOAL_FRACTION = 0.25f;
 
     @Override
@@ -29,8 +29,8 @@ public class TheDevilBoss extends Boss {
 
     @Override
     public String getDescription() {
-        return "Hellfire: every win keeps only half its profit, and red wins only " + Math.round(RED_KEEP * 100)
-            + "% on top.\n\nThe last gate before the million: grow your fortune by "
+        return "Hellfire: every win keeps only half its profit, and before each spin the wheel's most "
+            + "valuable segment is destroyed.\n\nThe last gate before the million: grow your fortune by "
             + Math.round(GOAL_FRACTION * 100) + "% within " + getSpinCount() + " spins.";
     }
 
@@ -46,6 +46,6 @@ public class TheDevilBoss extends Boss {
 
     @Override
     public List<GameEventListener> createListeners() {
-        return Arrays.asList(new HouseEdgeEffect(KEEP_FACTOR), new RedPenaltyEffect(RED_KEEP));
+        return Arrays.asList(new HouseEdgeEffect(KEEP_FACTOR), new DestroyValuableSegmentEffect());
     }
 }

@@ -8,7 +8,8 @@ import de.mario.roguelette.events.BetResolution;
 import de.mario.roguelette.wheel.NumberSegment;
 
 /**
- * While active, landing on a 7 triples all payouts.
+ * While active, landing on any number containing a 7 (7, 17, 27) triples all payouts. Broadened from
+ * just the single 7 so the chance is far less situational.
  */
 public class LuckySevenChance extends PendingChanceShopItem {
     public LuckySevenChance() {
@@ -17,11 +18,16 @@ public class LuckySevenChance extends PendingChanceShopItem {
         this.cost = 12;
     }
 
+    private boolean isLuckySeven(final NumberSegment segment) {
+        int n = segment.getCurrentNumber();
+        return n == 7 || n == 17 || n == 27;
+    }
+
     @Override
     public void onResolveBet(final GameState gameState, final BetResolution resolution) {
         if (resolution.isWin()
             && resolution.getLanded() instanceof NumberSegment
-            && ((NumberSegment) resolution.getLanded()).getCurrentNumber() == 7) {
+            && isLuckySeven((NumberSegment) resolution.getLanded())) {
             resolution.multiplyTotal(3f);
         }
     }
@@ -33,6 +39,6 @@ public class LuckySevenChance extends PendingChanceShopItem {
 
     @Override
     public String getDescription() {
-        return "While active, landing on a 7 triples all winning payouts. Lasts for one turn.";
+        return "While active, landing on a 7, 17 or 27 triples all winning payouts. Lasts for one turn.";
     }
 }

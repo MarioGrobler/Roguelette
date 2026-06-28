@@ -43,7 +43,7 @@ public class BloodlustEffect implements GameEventListener {
             stacks++;
         } else {
             stacks = 0;
-            int bleed = Math.round(gameState.getPlayer().getBalance() * BLEED);
+            long bleed = Math.round(gameState.getPlayer().getBalance() * (double) BLEED);
             if (bleed > 0) {
                 gameState.getPlayer().pay(bleed);
             }

@@ -5,16 +5,17 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.MathUtils;
 import de.mario.roguelette.GameState;
+import de.mario.roguelette.betting.Bet;
 import de.mario.roguelette.events.LandingContext;
-import de.mario.roguelette.wheel.NumberSegment;
 import de.mario.roguelette.wheel.Segment;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * While active, if the ball would land on a zero it bounces off to a random non-zero segment.
- * Demonstrates the landing hook of the event layer.
+ * While active, if the ball would land on a <em>losing</em> tile (one where none of your bets win) it
+ * bounces off to a random other segment, giving the spin a second roll. Demonstrates the landing hook
+ * of the event layer.
  */
 public class RicochetChance extends PendingChanceShopItem {
     public RicochetChance() {
@@ -23,24 +24,32 @@ public class RicochetChance extends PendingChanceShopItem {
         this.cost = 10;
     }
 
-    private boolean isZero(final Segment segment) {
-        return segment instanceof NumberSegment && ((NumberSegment) segment).getCurrentNumber() == 0;
+    /** @return whether any of the player's current bets would win on the given segment. */
+    private boolean winsSomething(final GameState gameState, final Segment segment) {
+        for (Bet bet : gameState.getBetManager().getBets()) {
+            if (bet.isWin(segment)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
     public void onBallLanded(final GameState gameState, final LandingContext landing) {
-        if (!isZero(landing.getSegment())) {
+        // Already a winning landing? Leave it. Only re-roll a tile that wins the player nothing.
+        if (winsSomething(gameState, landing.getSegment())) {
             return;
         }
 
-        List<Integer> nonZeroIndices = new ArrayList<>();
+        int current = landing.getSegmentIndex();
+        List<Integer> others = new ArrayList<>();
         for (int i = 0; i < landing.getWheel().size(); i++) {
-            if (!isZero(landing.getWheel().getSegmentAt(i))) {
-                nonZeroIndices.add(i);
+            if (i != current) {
+                others.add(i);
             }
         }
-        if (!nonZeroIndices.isEmpty()) {
-            landing.setSegmentIndex(nonZeroIndices.get(MathUtils.random(nonZeroIndices.size() - 1)));
+        if (!others.isEmpty()) {
+            landing.setSegmentIndex(others.get(MathUtils.random(others.size() - 1)));
         }
     }
 
@@ -51,6 +60,7 @@ public class RicochetChance extends PendingChanceShopItem {
 
     @Override
     public String getDescription() {
-        return "If the ball would land on a zero, it bounces off to a random non-zero segment. Lasts for one turn.";
+        return "If the ball would land on a losing tile, it bounces off to a random other segment for "
+            + "a second roll. Lasts for one turn.";
     }
 }

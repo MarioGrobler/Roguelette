@@ -128,6 +128,9 @@ public class RandomItemGenerator {
         pool.add(rar(new ComebackKidFortune(), Rarity.COMMON));
         pool.add(rar(new StreakBonusFortune(), Rarity.UNCOMMON));
 
+        // Duplicates ARE allowed: most fortunes stack as independent listeners, and the ones that
+        // would otherwise snowball (Paint It Black / Scarlet Surge) instead use an explicit,
+        // sub-linear stacking formula keyed off how many copies the player owns (see those classes).
         return pickWeighted(pool, FORTUNES_PER_RESTOCK, stage);
     }
 

@@ -15,6 +15,10 @@ public class Shop {
 
     private final RandomItemGenerator randomItemGenerator = new RandomItemGenerator();
 
+    // Extra discount applied to the opening (stage 1) shop only: the early game has the least money
+    // and the weakest items, so make the first shop's items meaningfully cheaper to ease the start.
+    private static final float FIRST_SHOP_DISCOUNT = 0.6f;
+
     // --- Segment Remover budget & pricing (tunable) ---
     // A per-stage allowance that shrinks over the run: generous early (shape the board's odds --
     // drop the 0, prune a few segments for a >50% wheel) but tight late, where deletion combined
@@ -94,17 +98,22 @@ public class Shop {
 
     /** Scales the prices of normal items by the current stage multiplier (delete is priced separately). */
     private void applyPriceMultiplier() {
+        float factor = priceMultiplier * (currentStage == 1 ? FIRST_SHOP_DISCOUNT : 1f);
         for (ChanceShopItem item : chances) {
-            item.cost *= priceMultiplier;
+            item.cost = scale(item.cost, factor);
         }
         for (FortuneShopItem item : fortunes) {
-            item.cost *= priceMultiplier;
+            item.cost = scale(item.cost, factor);
         }
         for (SegmentShopItem item : segments) {
             if (!(item instanceof DeleteSegmentShopItem)) {
-                item.cost *= priceMultiplier;
+                item.cost = scale(item.cost, factor);
             }
         }
+    }
+
+    private static int scale(int cost, float factor) {
+        return Math.max(1, Math.round(cost * factor));
     }
 
     public List<ChanceShopItem> getChances() {

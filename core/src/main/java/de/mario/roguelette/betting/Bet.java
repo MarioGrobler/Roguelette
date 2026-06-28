@@ -23,7 +23,7 @@ public class Bet {
     /**
      * @return the payout for this bet given a single landing. See {@link #getPayout(List, GameState)}.
      */
-    public float getPayout(final Segment landed, final GameState gameState) {
+    public double getPayout(final Segment landed, final GameState gameState) {
         return getPayout(Collections.singletonList(landed), gameState);
     }
 
@@ -36,8 +36,8 @@ public class Bet {
      * won on <em>no</em> ball and is counted once, capped at the full stake — multiple balls do
      * not multiply the refund.
      */
-    public float getPayout(final List<Segment> landedSegments, final GameState gameState) {
-        float winnings = 0f;
+    public double getPayout(final List<Segment> landedSegments, final GameState gameState) {
+        double winnings = 0d;
         boolean wonAny = false;
         float refundFraction = 0f;
 
@@ -48,8 +48,8 @@ public class Bet {
 
             if (win) {
                 wonAny = true;
-                float base = betType.getPayoutMultiplier() + resolution.getBaseAdd();
-                winnings += amount * base * landed.getCurrentMultiplier() * resolution.getTotalMul();
+                double base = betType.getPayoutMultiplier() + resolution.getBaseAdd();
+                winnings += (double) amount * base * landed.getCurrentMultiplier() * resolution.getTotalMul();
             } else {
                 refundFraction = Math.max(refundFraction, resolution.getRefundFraction());
             }

@@ -526,6 +526,8 @@ public class GameScreen implements Screen {
                 // a reward is chosen but the inventory is full: a discard frees the slot and claims it
                 if (handleInventoryDiscard(touchPos.x, touchPos.y)) {
                     gameState.tryClaimPendingReward(game);
+                    inventoryRenderer.updateItems();
+                    shopRenderer.updateItems();
                 }
                 return;
             }
@@ -534,6 +536,9 @@ public class GameScreen implements Screen {
                 gameState.chooseBossReward(game, index);
                 inventoryRenderer.updateItems();
                 activeChanceEffectsRenderer.updateChances();
+                // claiming the reward advances to the next stage's freshly-stocked shop; resync the
+                // shop renderer so it doesn't keep showing the previous stage's (partly sold-out) stock
+                shopRenderer.updateItems();
             }
         }
     }

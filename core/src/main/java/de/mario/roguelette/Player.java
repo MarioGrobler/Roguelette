@@ -9,7 +9,7 @@ import java.util.List;
 public class Player {
     private final Inventory inventory;
 
-    private int balance;
+    private long balance;
     private int currentlyInHand = 0; //amount of money currently in hand to be placed somewhere
     private final String name;
 
@@ -36,7 +36,7 @@ public class Player {
         return characterListeners;
     }
 
-    public int getBalance() {
+    public long getBalance() {
         return balance;
     }
 
@@ -60,15 +60,15 @@ public class Player {
         return inventory;
     }
 
-    public void pay(int amount) {
+    public void pay(long amount) {
         this.balance -= amount;
     }
 
-    public void earn(int amount) {
+    public void earn(long amount) {
         this.balance += amount;
     }
 
-    public boolean canAfford(int amount) {
+    public boolean canAfford(long amount) {
         // strictly greater as a balance of 0 means game over
         return this.balance > amount;
     }

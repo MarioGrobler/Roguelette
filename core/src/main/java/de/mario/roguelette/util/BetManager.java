@@ -54,7 +54,7 @@ public class BetManager {
         return total;
     }
 
-    public int computeReturn(final Segment segment, final GameState gameState) {
+    public long computeReturn(final Segment segment, final GameState gameState) {
         return computeReturn(Collections.singletonList(segment), gameState);
     }
 
@@ -63,11 +63,11 @@ public class BetManager {
      * per winning landing; refunds for a losing bet are counted once (see
      * {@link Bet#getPayout(List, GameState)}).
      */
-    public int computeReturn(final List<Segment> segments, final GameState gameState) {
-        float ret = 0;
+    public long computeReturn(final List<Segment> segments, final GameState gameState) {
+        double ret = 0;
         for (Bet b : bets) {
             ret += b.getPayout(segments, gameState);
         }
-        return (int) ret;
+        return (long) ret;
     }
 }

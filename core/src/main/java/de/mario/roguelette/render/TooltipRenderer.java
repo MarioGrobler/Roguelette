@@ -41,29 +41,34 @@ public class TooltipRenderer implements Renderable {
         float tooltipWidth = Math.max(layoutHeader.width, layoutDescription.width) + padding * 2;
         float tooltipHeight = layoutHeader.height + layoutDescription.height + padding * 4;
 
+        // Clamp the box so it never spills off-screen (items near the right/bottom edge would
+        // otherwise have their tooltip drawn partly outside the window).
+        float drawX = Math.max(0, Math.min(x, Gdx.graphics.getWidth() - tooltipWidth));
+        float drawY = Math.max(0, Math.min(y, Gdx.graphics.getHeight() - tooltipHeight));
+
         // black background with a bit of transparency
         Gdx.gl.glEnable(GL20.GL_BLEND);
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         shapeRenderer.setColor(new Color(0, 0, 0, 0.85f));
-        shapeRenderer.rect(x, y, tooltipWidth, tooltipHeight);
+        shapeRenderer.rect(drawX, drawY, tooltipWidth, tooltipHeight);
         shapeRenderer.end();
         Gdx.gl.glDisable(GL20.GL_BLEND);
 
         // white border + white split line
         shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
         shapeRenderer.setColor(Color.WHITE);
-        shapeRenderer.rect(x, y, tooltipWidth, tooltipHeight);
-        shapeRenderer.line(x, y + layoutDescription.height + 2*padding, x + tooltipWidth, y + layoutDescription.height + 2*padding);
+        shapeRenderer.rect(drawX, drawY, tooltipWidth, tooltipHeight);
+        shapeRenderer.line(drawX, drawY + layoutDescription.height + 2*padding, drawX + tooltipWidth, drawY + layoutDescription.height + 2*padding);
         shapeRenderer.end();
 
         // text
         batch.begin();
         font.setColor(Color.WHITE);
         font.getData().setScale(1.25f);
-        font.draw(batch, layoutHeader, x + padding, y + tooltipHeight - padding);
+        font.draw(batch, layoutHeader, drawX + padding, drawY + tooltipHeight - padding);
         font.getData().setScale(1f);
-        font.draw(batch, layoutDescription, x + padding, y + tooltipHeight - layoutHeader.height - 3*padding);
+        font.draw(batch, layoutDescription, drawX + padding, drawY + tooltipHeight - layoutHeader.height - 3*padding);
         batch.end();
     }
 

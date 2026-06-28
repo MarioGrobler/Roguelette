@@ -51,6 +51,31 @@ public class Inventory {
         return fortune;
     }
 
+    /** @return how many owned fortunes are of exactly the given type (for explicit stacking). */
+    public int countFortunes(final Class<? extends FortuneShopItem> type) {
+        int n = 0;
+        for (FortuneShopItem f : fortunes) {
+            if (f.getClass() == type) {
+                n++;
+            }
+        }
+        return n;
+    }
+
+    /**
+     * @return whether {@code item} is the <em>primary</em> (first-owned) copy of its type. Stack-aware
+     * fortunes let only their primary copy apply the shared, count-scaled effect, so the other copies
+     * don't multiply it; see e.g. {@code PaintItBlackFortune}.
+     */
+    public boolean isPrimaryFortune(final FortuneShopItem item) {
+        for (FortuneShopItem f : fortunes) {
+            if (f.getClass() == item.getClass()) {
+                return f == item;
+            }
+        }
+        return false;
+    }
+
     public boolean chancesFull() {
         return chances.size() >= chanceMaxSize;
     }
