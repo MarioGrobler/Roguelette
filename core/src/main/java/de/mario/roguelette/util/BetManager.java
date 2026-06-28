@@ -46,8 +46,8 @@ public class BetManager {
         return Collections.unmodifiableList(bets);
     }
 
-    public int totalAmount() {
-        int total = 0;
+    public long totalAmount() {
+        long total = 0;
         for (Bet b : bets) {
             total += b.getAmount();
         }

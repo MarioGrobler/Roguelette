@@ -17,7 +17,7 @@ public class ColumnRegion extends RectRegion {
     }
 
     @Override
-    public Bet createBet(int amount) {
+    public Bet createBet(long amount) {
         return new Bet(new ColumnBet(column), amount);
     }
 

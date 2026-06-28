@@ -10,7 +10,7 @@ public class Player {
     private final Inventory inventory;
 
     private long balance;
-    private int currentlyInHand = 0; //amount of money currently in hand to be placed somewhere
+    private long currentlyInHand = 0; //amount of money currently in hand to be placed somewhere
     private final String name;
 
     private final Character character;
@@ -40,11 +40,11 @@ public class Player {
         return balance;
     }
 
-    public int getCurrentlyInHand() {
+    public long getCurrentlyInHand() {
         return currentlyInHand;
     }
 
-    public void increaseHandBy(int amount) {
+    public void increaseHandBy(long amount) {
         currentlyInHand += amount;
     }
 

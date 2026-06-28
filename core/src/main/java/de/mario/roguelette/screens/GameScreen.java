@@ -433,7 +433,7 @@ public class GameScreen implements Screen {
         }
 
         if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
-            Optional<Integer> optChipValue = chipRenderer.handleLeftClick(touchPos.x, touchPos.y);
+            Optional<Long> optChipValue = chipRenderer.handleLeftClick(touchPos.x, touchPos.y);
             optChipValue.ifPresent(value -> {
                 gameState.getPlayer().increaseHandBy(value);
                 chipRenderer.updateChips();

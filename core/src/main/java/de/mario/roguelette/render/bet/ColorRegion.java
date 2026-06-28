@@ -50,7 +50,7 @@ public class ColorRegion extends RectRegion {
     }
 
     @Override
-    public Bet createBet(int amount) {
+    public Bet createBet(long amount) {
         return new Bet(new ColorBet(segmentColor), amount);
     }
 

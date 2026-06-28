@@ -17,7 +17,7 @@ public class DozenRegion extends RectRegion {
     }
 
     @Override
-    public Bet createBet(int amount) {
+    public Bet createBet(long amount) {
         return new Bet(new DozenBet(dozen), amount);
     }
 

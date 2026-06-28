@@ -22,7 +22,7 @@ public abstract class BetRegion implements Renderable {
         this.font = font;
     }
 
-    protected abstract void makeChip(int amount);
+    protected abstract void makeChip(long amount);
 
     protected void deleteChip() {
         this.chip = null;
@@ -39,7 +39,7 @@ public abstract class BetRegion implements Renderable {
         this.color = color;
     }
 
-    public abstract Bet createBet(int amount);
+    public abstract Bet createBet(long amount);
 
     public abstract String getLabel();
 }

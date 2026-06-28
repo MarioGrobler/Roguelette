@@ -24,7 +24,10 @@ public class Shop {
     // drop the 0, prune a few segments for a >50% wheel) but tight late, where deletion combined
     // with recolour items (Paint It Black, Scarlet Surge) could otherwise assemble a 100%-win
     // "no-brainer" board. Clamps to the last entry for higher stages.
-    private static final int[] DELETE_BUDGET = {5, 3, 1};
+    // Generous early (shape the board's odds), then OFF from stage 4 on: even one removal per late
+    // stage lets you prune the last few unwanted segments into a near-trivial board, so removal is a
+    // strictly early-game tool now. Stages 1/2/3 -> 5/3/1 removers; stage 4+ -> 0 (none offered).
+    private static final int[] DELETE_BUDGET = {5, 3, 1, 0};
     // Base price of the FIRST remover in a stage; doubles on each use within the stage. Cheap early
     // (early odds-shaping is intended), scaling up so late removals cost real money on top of being
     // rationed.

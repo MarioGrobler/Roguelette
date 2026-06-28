@@ -9,9 +9,9 @@ import java.util.List;
 
 public class Bet {
     private final BetType betType;
-    private int amount;
+    private long amount;
 
-    public Bet(BetType betType, int amount) {
+    public Bet(BetType betType, long amount) {
         this.betType = betType;
         this.amount = amount;
     }
@@ -67,11 +67,11 @@ public class Bet {
         return betType;
     }
 
-    public int getAmount() {
+    public long getAmount() {
         return amount;
     }
 
-    public void increaseAmount(int by) {
+    public void increaseAmount(long by) {
         this.amount += by;
     }
 

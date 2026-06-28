@@ -36,7 +36,7 @@ public class NumberRegion extends RectRegion {
     }
 
     @Override
-    public Bet createBet(int amount) {
+    public Bet createBet(long amount) {
         return new Bet(new NumberBet(number), amount);
     }
 

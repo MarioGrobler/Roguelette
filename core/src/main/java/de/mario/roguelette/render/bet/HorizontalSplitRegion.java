@@ -17,7 +17,7 @@ public class HorizontalSplitRegion extends InsideBetRegion {
     }
 
     @Override
-    public Bet createBet(int amount) {
+    public Bet createBet(long amount) {
         return new Bet(new HorizontalSplitBet(firstNumber), amount);
     }
 

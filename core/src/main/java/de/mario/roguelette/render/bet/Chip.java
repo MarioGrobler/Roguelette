@@ -20,13 +20,13 @@ public class Chip implements Renderable {
     private float fontScale = 1.2f;
 
     // actual value = base * 10^magnitude
-    private int base;
+    private long base;
     private int magnitude;
     private boolean available = true;
 
     Color color;
 
-    Color colorForValue(int base) {
+    Color colorForValue(long base) {
         if (base < 2) return Color.BROWN;
         if (base < 5) return Color.GOLDENROD;
         if (base < 10) return Color.ORANGE;
@@ -38,7 +38,7 @@ public class Chip implements Renderable {
         return new Color(0x2f2f2fff);
     }
 
-    public Chip(Circle bounds, int base, int magnitude, final ShapeRenderer shapeRenderer, final SpriteBatch batch, final BitmapFont font) {
+    public Chip(Circle bounds, long base, int magnitude, final ShapeRenderer shapeRenderer, final SpriteBatch batch, final BitmapFont font) {
         this.bounds = bounds;
         this.base = base;
         this.magnitude = magnitude;
@@ -113,11 +113,11 @@ public class Chip implements Renderable {
         return a + (b - a) * t;
     }
 
-    public int getBase() {
+    public long getBase() {
         return base;
     }
 
-    public void setBase(int base) {
+    public void setBase(long base) {
         this.base = base;
     }
 
@@ -137,8 +137,8 @@ public class Chip implements Renderable {
         this.available = available;
     }
 
-    public int getValue() {
-        return base * (int) Math.pow(10, magnitude);
+    public long getValue() {
+        return base * (long) Math.pow(10, magnitude);
     }
 
     public float getFontScale() {
@@ -150,7 +150,7 @@ public class Chip implements Renderable {
     }
 
     public String getLabel() {
-        int value = getValue();
+        long value = getValue();
         if (value % 1000000 == 0) return (value / 1000000) + "M";
         if (value > 1000000 && value % 100000 == 0) return String.format("%.1fM", value / 1000000f);
         if (value % 1000 == 0) return (value / 1000) + "K";

@@ -97,7 +97,7 @@ public class ChipRenderer implements Renderable {
         return false;
     }
 
-    public Optional<Integer> handleLeftClick(float x, float y) {
+    public Optional<Long> handleLeftClick(float x, float y) {
         for (Chip chip : chips) {
             if (chip.contains(x, y)) {
                 if (chip.isAvailable()) {

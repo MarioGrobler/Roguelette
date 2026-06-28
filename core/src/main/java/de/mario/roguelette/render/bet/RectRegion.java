@@ -75,7 +75,7 @@ public abstract class RectRegion extends BetRegion {
     }
 
     @Override
-    protected void makeChip(int amount) {
+    protected void makeChip(long amount) {
         float centerX = bounds.getX() + bounds.getWidth() / 2f;
         float centerY = bounds.getY() + bounds.getHeight() / 2f;
         this.chip = new Chip(new Circle(centerX, centerY, 25), amount, 0, shapeRenderer, batch, font);

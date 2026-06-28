@@ -16,7 +16,7 @@ public class StreetRegion extends InsideBetRegion {
     }
 
     @Override
-    public Bet createBet(int amount) {
+    public Bet createBet(long amount) {
         return new Bet(new StreetBet(street), amount);
     }
 

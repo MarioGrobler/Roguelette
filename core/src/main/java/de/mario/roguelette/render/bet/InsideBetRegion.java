@@ -23,7 +23,7 @@ public abstract class InsideBetRegion extends BetRegion {
     }
 
     @Override
-    protected void makeChip(int amount) {
+    protected void makeChip(long amount) {
         this.chip = new Chip(new Circle(bounds.x, bounds.y, 15), amount, 0, shapeRenderer, batch, font);
         this.chip.setFontScale(1f);
     }
