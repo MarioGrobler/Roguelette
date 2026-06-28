@@ -126,31 +126,36 @@ $150 → $500 → $1,500 → $5,000 → $16,000 → $55,000 → $200,000 → $1,
 Development session notes are stored in `.claude/notes/` with detailed summaries of work done.
 Screenshots documenting progress are in `.claude/screenshots/` with timestamp filenames (YYYY-MM-DD-HH-MM.png).
 
-**Latest session:** `2026-06-26-economy-balance-session.md` - Major **economy/balance overhaul** to
-kill "the first shop decides the run". Diagnosed via a headless Monte-Carlo sim (`.claude/tools/EconSim.java`):
-×10,000 in ~24 spins isn't grindable, so the run is a **big-hit gambling climb** (identity kept).
-Shipped: 8-stage gentle curve + target-tied pricing; capped the two compounding engines (Paint It
-Black, Lightning Storm); Segment Remover per-stage budget {5,3,1} + remover-count badge; restock
-bug fix + escalating-price restocks (no cap); **item rarity + stage-gating** (the structural
-first-shop fix); Freeze → patch-freeze; MirrorFate non-number crash fix. All committed + pushed.
-**Next:** (1) boss system (debuffs + drop legendary items), (2) major graphics update. Earlier:
-`2026-06-22-character-select-session.md` (run-start characters), `2026-06-21-freeze-chance-session.md`
-(event layer + multi-ball), and the two `2026-06-20-*` graphics/event-layer sessions.
+**Latest session:** `2026-06-28-balance-baseline-session.md` - Playtest-driven balance/bugfix pass that
+reached a **baseline** the user is happy with. Shipped: gate the $1M win behind the final boss; Devil
+destroy-segment effect; **explicit sub-linear fortune stacking** (replaced the no-dup rule); **int→long
+money model** (balance + bet/chip paths, ~9.2e18); Interest reworked + capped at the stage goal; Segment
+Remover off from stage 4; Safety Net 60→30%; flat 4 spins/stage; chip B/T labels; tooltip clamp; boss
+shop-restock + interest-precredit fixes. All committed + pushed. Earlier: `2026-06-27-boss-system-session.md`
+(boss system + legendary rewards), `2026-06-26-economy-balance-session.md` (economy overhaul),
+`2026-06-22-character-select-session.md` (characters), `2026-06-21-freeze-chance-session.md` (event layer + multi-ball).
+
+**Living design docs (`.claude/design/`, multi-session plans, read before starting either):**
+`ascension-mode.md` ("Casino Curses" opt-in difficulty layer) and `graphics-atmosphere.md` (tech-demo →
+atmosphere: SFX/VFX, transitions, ball feel, boss art, HUD polish, layout rethink, music).
 
 ## Current State / Next Ideas
 
-### 0. Next session priorities (planned 2026-06-26)
+### 0. Next session priorities (baseline reached 2026-06-28)
 
-**(1) Boss system.** Decide who/what bosses are + the per-round **debuffs** they impose (reuse the
-event layer: a boss = a temporary `GameEventListener` + optional wheel mutation — e.g. "red pays
-nothing", "house skims 20%", "enlarged 0-zone", "outside bets only", "0 un-removable"). Bosses
-**drop legendary items** (pick one-of-N) → then remove LEGENDARY from the shop pool (one-line change
-in `RandomItemGenerator`; LEGENDARY currently = Crystal Ball, gated to stage 5 as interim home).
+Boss system **shipped** (`boss/` package, gates stages 2/4/6/8, legendary rewards). Balance baseline
+reached and committed. Next, in order (see `.claude/design/` living docs + memory `roadmap-next-steps`):
 
-**(2) Major graphics update** (prototype → full game; expected to be large). Per-item visual effects
-(freeze effect, lightning effect, ...), **highlight selectable segments** (esp. the Freeze patch —
-no on-wheel highlight yet), **screen transitions**, **sound effects** (none currently), **resizable
-window / multiple resolutions / widescreen**, and reconsider whether to overhaul the whole layout.
+**(1) More items** (chances/fortunes/segments/ball-modifiers — backlog below + memory `character-ball-ideas`).
+Also dilutes the synergy snowballs.
+
+**(2) Casino Curses** — the opt-in ascension/difficulty layer. Full plan in
+`.claude/design/ascension-mode.md` (needs a persistence layer + a `RunConfig` extraction first; `Curse`
+mirrors `Boss`/`Character`; "segment curses" generalise the unremovable-0 idea).
+
+**(3) Major graphics/atmosphere update** — full plan in `.claude/design/graphics-atmosphere.md`
+(art direction first, then event-driven SFX/VFX, segment-selection highlight, transitions, ball feel,
+boss portraits, HUD polish, layout rethink, music). Expected to span several sessions; mostly comes last.
 
 ### 1. More Items
 
