@@ -55,11 +55,11 @@ public class GameState {
 
     // Progression curve. Stage S (1-indexed) must reach STAGE_TARGETS[S-1] by the end of its
     // STAGE_ROUNDS[S-1] spins; clearing the last stage (== finalGoal) wins the run. Stage 1 is a
-    // gentle setup stage (no brutal luck leap) and the goal ramps smoothly (~3.2x/stage) to $1M,
-    // with more spins in the later, harder stages. More, smaller stages => more shop visits =>
-    // more chances to build item synergies.
+    // gentle setup stage (no brutal luck leap) and the goal ramps smoothly (~3.2x/stage) to $1M.
+    // A flat 4 spins/stage keeps every stage tight and snappy (the run is about engineering one big
+    // hit per stage, not grinding many spins); more, smaller stages => more shop visits => synergies.
     private static final long[] STAGE_TARGETS = {150, 500, 1500, 5000, 16000, 55000, 200000, 1_000_000};
-    private static final int[]  STAGE_ROUNDS  = {  4,   4,    4,    5,     5,     5,      6,         6};
+    private static final int[]  STAGE_ROUNDS  = {  4,   4,    4,    4,     4,     4,      4,         4};
 
     // Progression
     private int currentStage = 1;

@@ -13,7 +13,7 @@ import de.mario.roguelette.events.BetResolution;
  */
 public class SafetyNetFortune extends FortuneShopItem {
 
-    private static final float REFUND = 0.60f;
+    private static final float REFUND = 0.30f;
 
     public SafetyNetFortune() {
         super(new FortuneRenderInfo(new Texture(Gdx.files.internal("icon/safetyNet.png")),

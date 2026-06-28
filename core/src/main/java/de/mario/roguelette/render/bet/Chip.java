@@ -151,6 +151,14 @@ public class Chip implements Renderable {
 
     public String getLabel() {
         long value = getValue();
+        if (value >= 1_000_000_000_000L) { // trillions
+            if (value % 1_000_000_000_000L == 0) return (value / 1_000_000_000_000L) + "T";
+            return String.format("%.1fT", value / 1_000_000_000_000d);
+        }
+        if (value >= 1_000_000_000L) { // billions
+            if (value % 1_000_000_000L == 0) return (value / 1_000_000_000L) + "B";
+            return String.format("%.1fB", value / 1_000_000_000d);
+        }
         if (value % 1000000 == 0) return (value / 1000000) + "M";
         if (value > 1000000 && value % 100000 == 0) return String.format("%.1fM", value / 1000000f);
         if (value % 1000 == 0) return (value / 1000) + "K";
