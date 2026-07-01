@@ -4,7 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Roguelette is a roguelike roulette builder game built with libGDX (Java). Players start with $100 and build to $1,000,000 by playing roulette while purchasing items to customize the wheel, add passive effects, or activate one-time abilities.
+Roguelette is a roguelike roulette builder game built with libGDX (Java). Players pick a character,
+start with ~$100 and build to $1,000,000 across 8 stages by playing roulette while buying items that
+customize the wheel, add passive effects, or grant one-time abilities. Bosses gate stages 2/4/6/8;
+an opt-in "Casino Curses" difficulty ladder (8 levels) provides the roguelite climb, backed by a
+persistent player profile.
 
 ## Build & Run Commands
 
@@ -38,39 +42,58 @@ Roguelette is a roguelike roulette builder game built with libGDX (Java). Player
 ### Module Structure
 - `core/` - Platform-independent game logic (all gameplay code lives here)
 - `lwjgl3/` - Desktop platform launcher using LWJGL3 backend
-- `assets/` - Game resources (music, icons, logos)
+- `assets/` - Game resources (music, icons, logos, character portraits)
 
 ### Key Packages (in `core/src/main/java/de/mario/roguelette/`)
 
 | Package | Purpose |
 |---------|---------|
-| `screens/` | libGDX Screen implementations (MainMenu, Game, GameOver, YouWin) |
-| `wheel/` | Wheel and Segment classes with effect system |
-| `betting/` | Bet types and betting logic (BetType enum defines payouts) |
-| `items/` | Shop system with three item categories |
+| `screens/` | libGDX Screens (MainMenu, CharacterSelect, Game, GameOver, YouWin) |
+| `wheel/` | Wheel and Segment classes (incl. `DevilSegment`) with effect system |
+| `betting/` | Bet types and betting logic (BetType implementations define payouts) |
+| `items/` | Shop system with three item categories + `LegendaryPool` (boss rewards) |
 | `events/` | Game event layer: `GameEventListener` hooks + `LandingContext`/`BetResolution`/`SpinContext` |
-| `balls/` | `Ball` — a ball in a spin (tint now; future per-ball/player behaviour) |
+| `balls/` | `Ball` — a ball in a spin (tint + per-ball `payoutFactor`) |
+| `characters/` | Run-start characters (Balatro-style; passive listeners + signature ball) |
+| `boss/` | Boss encounters gating stages 2/4/6/8 (debuff listeners + wheel mutation) |
+| `curses/` | Casino Curses: `Curse` + the 8-level `CurseLevels` ladder |
+| `config/` | `RunConfig` — every run knob (curve, prices, rounds, budgets), built at run start |
+| `profile/` | Persistent player profile (`ProfileManager`, `~/.roguelette/profile.json`) |
 | `render/` | All rendering components implementing `Renderable` interface |
 | `animator/` | Wheel and ball animation logic |
-| `util/` | Managers (BetManager, MusicManager, PendingChanceManager) |
+| `util/` | Managers (BetManager, MusicManager, PendingChanceManager, FontManager) |
 
 ### Core Classes
 
-- **RougeletteGame** - Main Game class, manages screens and music
-- **GameState** - State stack manager with states: DEFAULT, SPINNING, DELETE_SEGMENT_SELECTING, CHANCE_SEGMENT_SELECTING, SHOW_CRYSTAL_BALL, SHOP_OPEN
-- **GameScreen** - Main gameplay orchestration
-- **Wheel/Segment** - Wheel contains Segments; NumberSegment for 0-36, JokerSegments for custom positions
-- **Player** - Balance, inventory, hand (current bets)
-- **Shop/Inventory** - Item management with 5-slot inventory limit
+- **RougeletteGame** - Main Game class; owns screens, music, fonts and the `ProfileManager`
+- **GameState** - State stack (DEFAULT, SPINNING, DELETE/CHANCE_SEGMENT_SELECTING, SHOW_CRYSTAL_BALL,
+  SHOP_OPEN, BOSS_INTRO/FIGHT/REWARD) + progression, event dispatch, boss encounters, curse wiring
+- **RunConfig** - all run tunables in one instance (stage targets/rounds, price curve, shop knobs,
+  starting balance). Built via `RunConfig.baseline(character)` in `GameScreen.show()`; curses modify
+  it via setters before the run is constructed. **The balance table lives here.**
+- **GameScreen** - Main gameplay orchestration; assembles the whole run in `show()`
+- **Wheel/Segment** - Wheel contains Segments; `NumberSegment` (0-36), Joker segments, `DevilSegment`
+  (never wins, never removable). `Segment.isUnremovable()`/`isRecolorable()` must be honoured at
+  every mutation point (Segment Remover, boss destroy effect, recolour fortunes)
+- **Player** - Balance (long), inventory, hand, character
+- **Shop/Inventory** - Item management; 5 fortune slots, 5 chance slots (Deep Pockets adds more —
+  `Inventory.getChanceMaxSize()` is computed live)
+- **ProfileManager/Profile** - versioned JSON persistence: run stats, per-character wins and
+  `highestCurseBeaten` (gates curse-level selection). All persistence goes through here.
 
 ### Item Hierarchy
 
 ```
-ShopItem (abstract)
+ShopItem (abstract)          # getCost(Player) applies player-side discounts (Bargain Hunter)
 ├── FortuneShopItem - Passive effects (permanent during run)
 ├── ChanceShopItem - Consumable one-time effects → PendingChanceShopItem (active tracking)
 └── SegmentShopItem - Wheel modifications (add/delete segments)
 ```
+
+Rarity (COMMON/UNCOMMON/RARE) drives weighted shop draws + a min-stage gate; rarity is assigned
+centrally in `RandomItemGenerator`. LEGENDARY items live only in `LegendaryPool` (boss rewards,
+pick 1 of 3). Duplicates are allowed; snowbally fortunes stack **sub-linearly** via the primary-copy
+pattern (`Inventory.countFortunes` + `isPrimaryFortune`; see PaintItBlack/ScarletSurge/PhoenixFeather).
 
 ### Rendering Pattern
 
@@ -80,39 +103,41 @@ All visual components implement `Renderable` interface with:
 
 ### Event Layer
 
-Persistent game objects (owned `FortuneShopItem`s, active `PendingChanceShopItem`s) implement
-`GameEventListener` (package `events/`). `GameState` aggregates them (fortunes first, then
-chances) and dispatches at well-defined points instead of hard-wiring effects into payout/spin
-code:
-- `onSpinStart` / `onBallLanded(LandingContext)` — `LandingContext` is mutable, so items can
-  override where the ball lands (Ricochet, Freeze, ball modifiers). The landing is decided at
-  selection time, before the spin animates to it; `onBallLanded` fires once per ball.
-- `onPrepareSpin(SpinContext)` — fired before landings are rolled while the spin's ball list is
-  assembled. Seeded with the player's default ball (`Ball.defaultBall()`); listeners add more
-  (Double Ball). Each ball lands and pays out independently. Multi-ball spins are driven by
-  `GameScreen.startSpin()` + `WheelRenderer.spinBalls(...)`.
-- `onResolveBet(BetResolution)` — items contribute `addBase`/`multiplyTotal` (win) or
-  `addRefund` (loss). `Bet.getPayout(List<Segment>)` builds a `BetResolution` per ball and
-  dispatches; winnings sum across balls, refunds count once.
-- `onTurnChange` — per-turn upkeep (duration ticking, wheel mutation, interest, ...).
+Persistent game objects implement `GameEventListener` (package `events/`). `GameState` aggregates
+them in order — character passives, **curse listeners**, fortunes, active chances, boss debuffs —
+and dispatches at well-defined points:
+- `onSpinStart` / `onBallLanded(LandingContext)` — `LandingContext` is mutable, so listeners can
+  override where a ball lands (Ricochet, Freeze, Magnet Ball). Landing is decided at selection time,
+  before the spin animates; `onBallLanded` fires once per ball.
+- `onPrepareSpin(SpinContext)` — the spin's ball list is assembled (Double Ball, Twin Ball add
+  extras). Each ball lands and pays out independently.
+- `onResolveBet(BetResolution)` — items contribute `addBase`/`multiplyTotal` (win) or `addRefund`
+  (loss). Refunds can be vetoed order-independently (`suppressRefunds`, All or Nothing) or scaled
+  (`multiplyRefund`, Frayed Nets curse). `Bet.getPayout` builds a `BetResolution` per ball.
+- `onTurnChange` — per-turn upkeep (duration ticking, wheel mutation, interest, rent, ...).
 
 ### Payout Formula
 
 ```
-amount × (base_multiplier + Σ listener base adds) × segment_multiplier × Π listener total muls   (win)
-amount × min(1, Σ listener refund fractions)                                                      (loss)
+win:  amount × (base_multiplier + Σ base adds) × segment_multiplier × Π total muls × ball_payout_factor
+      (summed across balls; a winning bet never returns less than its stake)
+loss: amount × min(1, Σ refund fractions × refund factor)   (0 if suppressed; counted once per spin)
 ```
 
-### Progression System
+### Progression & Casino Curses
 
-8 stages with a smooth ~3.2×/stage ramp (gentle stage-1 "setup", not a luck leap):
-$150 → $500 → $1,500 → $5,000 → $16,000 → $55,000 → $200,000 → $1,000,000
-- `STAGE_TARGETS` / `STAGE_ROUNDS` arrays in `GameState` drive the curve (rounds 4→6).
-- Prices scale **with the target curve** (`getPriceMultiplier()` = ~prev target / 100) so an item
-  stays a roughly constant fraction of bankroll the whole run, instead of the old runaway 10×/stage
-  that priced you out of the shop late.
-- Design intent: each stage ≈ "engineer one big hit"; the run is a **big-hit gambling climb**, not a
-  steady +EV grind (×10,000 in ~24 spins is not grindable — see `.claude/tools/EconSim.java`).
+8 stages, ~3.2×/stage: $150 → $500 → $1,500 → $5,000 → $16,000 → $55,000 → $200,000 → $1,000,000,
+flat 4 rounds per stage — all driven by **`RunConfig`** (no longer hardcoded in GameState). Prices
+scale with the target curve (`getPriceMultiplier` ≈ prev target / 100). Bosses gate stages 2/4/6/8
+(gain-X%-in-3-spins fights; reward = 1-of-3 legendaries); the $1M win only triggers after the final
+boss. Design intent: each stage ≈ "engineer one big hit" — a big-hit gambling climb, not a +EV grind
+(see `.claude/tools/EconSim.java`, diagnostic only).
+
+**Casino Curses** (opt-in, per-character unlock): 8 strictly additive levels — each level = previous
++ exactly one curse. Mains at levels 1/4/7 (Devil's Mark: a `DevilSegment` on the wheel; Devil's
+Harvest: +1 per beaten boss; Borrowed Against Time: −1 round/stage); other levels add one random
+tier-gated sub-curse (`CurseLevels.rollForLevel`). Curses act via `RunConfig` modifiers, event
+listeners, and/or one-time run setup. Level select: UP/DOWN on the character-select screen.
 
 ## Dependencies
 
@@ -123,113 +148,53 @@ $150 → $500 → $1,500 → $5,000 → $16,000 → $55,000 → $200,000 → $1,
 
 ## Session Notes & Screenshots
 
-Development session notes are stored in `.claude/notes/` with detailed summaries of work done.
-Screenshots documenting progress are in `.claude/screenshots/` with timestamp filenames (YYYY-MM-DD-HH-MM.png).
+Development session notes are in `.claude/notes/`; screenshots in `.claude/screenshots/`
+(YYYY-MM-DD-HH-MM.png). Item icons are generated via PowerShell System.Drawing scripts in
+`.claude/art/` (1024×1024, transparent background, glyph style).
 
-**Latest session:** `2026-06-28-balance-baseline-session.md` - Playtest-driven balance/bugfix pass that
-reached a **baseline** the user is happy with. Shipped: gate the $1M win behind the final boss; Devil
-destroy-segment effect; **explicit sub-linear fortune stacking** (replaced the no-dup rule); **int→long
-money model** (balance + bet/chip paths, ~9.2e18); Interest reworked + capped at the stage goal; Segment
-Remover off from stage 4; Safety Net 60→30%; flat 4 spins/stage; chip B/T labels; tooltip clamp; boss
-shop-restock + interest-precredit fixes. All committed + pushed. Earlier: `2026-06-27-boss-system-session.md`
-(boss system + legendary rewards), `2026-06-26-economy-balance-session.md` (economy overhaul),
-`2026-06-22-character-select-session.md` (characters), `2026-06-21-freeze-chance-session.md` (event layer + multi-ball).
+**Latest sessions (2026-07-01, two arcs, all pushed):**
+- `2026-07-01-items-wave1-session.md` — **Items Wave 1**: 7 fortunes + 6 chances + Twin Ball
+  legendary + Crystal Ball buff (never lies). Pools now 13 fortunes / 13 chances / 5 legendaries.
+  Infra: per-ball payout factor, refund suppression, central price-discount hook, free-restock flag,
+  dynamic chance slots, borrowed-time round skip.
+- `2026-07-01-casino-curses-session.md` — **Casino Curses M0–M3**: persistence layer, RunConfig
+  extraction, the additive curse ladder + level select, Devil's Segment + unremovable/recolorable
+  audit.
 
-**Living design docs (`.claude/design/`, multi-session plans, read before starting either):**
-`ascension-mode.md` ("Casino Curses" opt-in difficulty layer) and `graphics-atmosphere.md` (tech-demo →
-atmosphere: SFX/VFX, transitions, ball feel, boss art, HUD polish, layout rethink, music).
+Earlier: `2026-06-28-balance-baseline-session.md` (balance baseline), `2026-06-27-boss-system-session.md`,
+`2026-06-26-economy-balance-session.md`, `2026-06-22-character-select-session.md`,
+`2026-06-21-freeze-chance-session.md`.
 
-## Current State / Next Ideas
+**Living design docs (`.claude/design/`, read before working on these features):**
+`ascension-mode.md` (Casino Curses — M0–M3 shipped, M4/M5 open), `graphics-atmosphere.md`
+(tech-demo → atmosphere overhaul, not started), `new-items.md` (Items Wave 1 — complete, watchlist
+inside).
 
-### 0. Next session priorities (baseline reached 2026-06-28)
+## Current State / Next Steps
 
-Boss system **shipped** (`boss/` package, gates stages 2/4/6/8, legendary rewards). Balance baseline
-reached and committed. Next, in order (see `.claude/design/` living docs + memory `roadmap-next-steps`):
+### 0. Immediate: PLAYTEST (nothing since the 2026-06-28 baseline has been played!)
+One clean run + one curse-level-1 run. Watchlists: Rent Collector stage-1 power ($37/round vs $150
+goal), Phoenix Feather gate feel, Magnet Ball pull strength, Bargain Hunter −50% value,
+Overcharge×Freeze combo, Twin Ball vs boss goals; curse level-1 feel, Impatient Bosses (3→2 spins),
+ladder pacing.
 
-**(1) More items** (chances/fortunes/segments/ball-modifiers — backlog below + memory `character-ball-ideas`).
-Also dilutes the synergy snowballs.
+### 1. Then, in rough order
+1. **Curse polish**: in-run display of active curses (reuse boss-card style), more segment curses
+   (multiplier decay, rebounce, leech, trap, phantom — `ascension-mode.md` §4.3/§5), M5 meta
+   (framing/story, run summary). Seeded draws need a run-seed system first.
+2. **More bosses** (roster is 4 for 4 slots — no variety): Freezer (disables non-joker segments),
+   Shadow Double (shadow ball whose wins LOSE money, via `onPrepareSpin`). Boss portraits later.
+3. **A 6th legendary** (pool is 5 with OFFER_SIZE 3; ideas parked in `new-items.md` §3).
+4. **More items / Wave 2** when pools feel thin — remaining backlog: Ghost Ball, Heavy Ball
+   (cheap `onBallLanded` ball-mods), segment-type items (deliberately deferred to curse waves),
+   character-specific balls (per-ball payout bias infra EXISTS now — `Ball.payoutFactor`).
+5. **Major graphics/atmosphere update** (`graphics-atmosphere.md`) — art direction first, then SFX,
+   segment-selection highlight (real UX gap: Freeze/Remover have no on-wheel highlight), VFX, ball
+   feel, transitions, boss portraits, HUD, layout. Expected multi-session; LAST.
 
-**(2) Casino Curses** — the opt-in ascension/difficulty layer. Full plan in
-`.claude/design/ascension-mode.md` (needs a persistence layer + a `RunConfig` extraction first; `Curse`
-mirrors `Boss`/`Character`; "segment curses" generalise the unremovable-0 idea).
-
-**(3) Major graphics/atmosphere update** — full plan in `.claude/design/graphics-atmosphere.md`
-(art direction first, then event-driven SFX/VFX, segment-selection highlight, transitions, ball feel,
-boss portraits, HUD polish, layout rethink, music). Expected to span several sessions; mostly comes last.
-
-### 1. More Items
-
-**Chances (single-use actives):**
-- Reroll: refresh shop inventory — NOT DONE (needs a shop-refresh hook; renderer coupling)
-- ✅ Insurance: refund bet on loss — DONE (`InsuranceChance`)
-- ✅ Freeze: lock a segment as guaranteed landing — DONE (`FreezeChance`; WheelSelectChance + onBallLanded)
-- ✅ Lucky Seven: landing on a 7 pays triple — DONE (`LuckySevenChance`)
-- ✅ Ricochet: if ball lands on 0, bounce to random non-zero — DONE (`RicochetChance`)
-- ✅ Double Ball: next spin plays with two balls, both pay out — DONE (`DoubleBallChance`)
-
-**Fortunes (passives):**
-- ✅ Interest: earn % of balance between rounds — DONE (`InterestFortune`, onTurnChange)
-- ✅ Streak Bonus: consecutive winning spins increase multiplier — DONE (`StreakBonusFortune`, stateful)
-- ✅ Comeback Kid: bonus multiplier when balance is low — DONE (`ComebackKidFortune`, scales off stage goal)
-- Bargain Hunter: shop discount — NOT DONE
-- Deep Pockets: extra inventory slots — NOT DONE
-
-**Segments:**
-- Multiplier segments (2x, 3x on landing)
-- Wild segments (count as both red and black)
-- Multi-number segments (cover 2-3 adjacent numbers)
-- Trap segments (risk/reward - high multiplier but lose extra on miss)
-
-**Ball Modifiers (multi-ball infra DONE — `balls/Ball`, `events/SpinContext`, `onPrepareSpin`):**
-- ✅ Double Ball: two outcomes per spin, both pay out — DONE (`DoubleBallChance`)
-- Magnetic Ball: bias toward certain colors — NOT DONE (cheap `onBallLanded` item)
-- Ghost Ball: phases through first segment, lands on second — NOT DONE (`onBallLanded`)
-- Heavy Ball: tends toward adjacent segments after bounce — NOT DONE (`onBallLanded`)
-- Ball "player select" characters (default ball, red ball that pays more on red, ...): the spin
-  is seeded with `Ball.defaultBall()` in `GameScreen.startSpin()` (TODO there); per-ball payout
-  bias would hang off `balls/Ball`. NOT DONE.
-
-### 2. Graphics Polish
-
-**Completed (2026-06-20):**
-- FreeType fonts (Montserrat Bold) via FontManager
-- Background gradient (radial vignette)
-- RoundedRects: shadows, gradients, highlights
-- Wheel segments: radial gradients, purple for BOTH
-- Multiplier badges: rounded pill shape, subtle colors
-- Wheel: outer rim gradient, center hub gradient, ball shadow
-- Betting cells: vertical gradients
-- Chips: shadows, subtle center gradient
-- Fortune items: shadows, gradients
-
-**Remaining:**
-- Fix wheel center hub / segment overlap issue
-- Particle effects: win celebrations, ball trails
-- Shaders: glow effects, screen transitions
-- Animated items in shop/inventory
-- Sound design (no sound effects currently)
-
-### 3. Meta-Progression (Roguelite Elements)
-
-**Characters (Balatro-style):**
-- High Roller: starts $500, higher stage goals
-- Lucky: starts with a random Fortune
-- Collector: 7 inventory slots instead of 5
-- Risk Taker: all payouts ±50% variance
-
-**Unlocks:**
-- New items unlocked by achievements
-- Characters unlocked by completing runs
-- Cosmetic wheel/chip themes
-
-**Achievements:**
-- Win on specific numbers (hit 17 three times)
-- Reach balance milestones ($10k, $100k, $1M)
-- Win X rounds in a row
-- Complete run with specific item combos
-- Complete run without using shop
-
-**Game Modes:**
-- Daily Challenge: seeded run, leaderboard
-- Endless: no win condition, how far can you go?
-- Challenge Runs: modifiers (no fortunes, double prices, etc.)
+### 2. Meta-progression (foundation now exists)
+- **Shipped**: characters (Gambler/Count/Professor — `characters/`, backlog in memory
+  `character-ball-ideas`), persistent profile, Casino Curses ladder with per-character unlocks.
+- **Open**: achievements (profile is ready for it), item/character unlocks, cosmetic themes,
+  game modes (daily challenge needs seeded runs; endless needs a big-number money type — `long`
+  caps at ~9.2e18).
