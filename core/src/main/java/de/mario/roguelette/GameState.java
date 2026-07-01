@@ -3,6 +3,7 @@ package de.mario.roguelette;
 import de.mario.roguelette.balls.Ball;
 import de.mario.roguelette.boss.Boss;
 import de.mario.roguelette.boss.BossRoster;
+import de.mario.roguelette.config.RunConfig;
 import de.mario.roguelette.events.BetResolution;
 import de.mario.roguelette.events.GameEventListener;
 import de.mario.roguelette.events.LandingContext;
@@ -54,21 +55,15 @@ public class GameState {
     private List<ShopItem> bossRewardOffer = null;
     private ShopItem pendingReward = null; // a chosen reward waiting for the player to free an inventory slot
 
-    // Progression curve. Stage S (1-indexed) must reach STAGE_TARGETS[S-1] by the end of its
-    // STAGE_ROUNDS[S-1] spins; clearing the last stage (== finalGoal) wins the run. Stage 1 is a
-    // gentle setup stage (no brutal luck leap) and the goal ramps smoothly (~3.2x/stage) to $1M.
-    // A flat 4 spins/stage keeps every stage tight and snappy (the run is about engineering one big
-    // hit per stage, not grinding many spins); more, smaller stages => more shop visits => synergies.
-    private static final long[] STAGE_TARGETS = {150, 500, 1500, 5000, 16000, 55000, 200000, 1_000_000};
-    private static final int[]  STAGE_ROUNDS  = {  4,   4,    4,    4,     4,     4,      4,         4};
-
-    // Progression
+    // Progression. The curve (targets/rounds) and the economy knobs live in the run's RunConfig
+    // (built at run start; the enabling hook for Casino Curses) — see config/RunConfig.
+    private final RunConfig runConfig;
     private int currentStage = 1;
     private int currentRound = 1;
     private boolean borrowedTime = false; // Borrowed Time chance: the next endRound doesn't count
-    private int roundsInStage = STAGE_ROUNDS[0];
-    private long requiredChips = STAGE_TARGETS[0];
-    private final long finalGoal = STAGE_TARGETS[STAGE_TARGETS.length - 1];
+    private int roundsInStage;
+    private long requiredChips;
+    private final long finalGoal;
 
     public enum GameStateMode {
         DEFAULT,
@@ -110,14 +105,23 @@ public class GameState {
     // bottom: "main states", top: "overlay states"
     private final Deque<TimedState> stateStack = new ArrayDeque<>();
 
-    public GameState(final Player player, final Wheel wheel, final BetManager betManager, final Shop shop, final MusicManager musicManager) {
+    public GameState(final Player player, final Wheel wheel, final BetManager betManager, final Shop shop, final MusicManager musicManager, final RunConfig runConfig) {
         this.player = player;
         this.wheel = wheel;
         this.betManager = betManager;
         this.shop = shop;
         this.musicManager = musicManager;
+        this.runConfig = runConfig;
+
+        this.roundsInStage = runConfig.getStageRounds(1);
+        this.requiredChips = runConfig.getStageTarget(1);
+        this.finalGoal = runConfig.getFinalGoal();
 
         this.stateStack.push(new TimedState(GameStateMode.DEFAULT));
+    }
+
+    public RunConfig getRunConfig() {
+        return runConfig;
     }
 
     // getters for important objects
@@ -352,9 +356,21 @@ public class GameState {
     }
 
 
+    /** Ends the run as a loss: records it to the profile, then shows the game-over screen. */
+    private void loseRun(final RougeletteGame game) {
+        game.getProfileManager().recordRunEnd(player.getCharacter().getName(), false, player.getBalance());
+        game.setScreen(new GameOverScreen(game));
+    }
+
+    /** Ends the run as the win: records it to the profile, then shows the you-win screen. */
+    private void winRun(final RougeletteGame game) {
+        game.getProfileManager().recordRunEnd(player.getCharacter().getName(), true, player.getBalance());
+        game.setScreen(new YouWinScreen(game, game.getScreen()));
+    }
+
     public void endRound(final RougeletteGame game) {
         if (player.isDead()) {
-            game.setScreen(new GameOverScreen(game));
+            loseRun(game);
             return;
         }
 
@@ -377,7 +393,7 @@ public class GameState {
                     advancePastStage(game);
                 }
             } else { // game over
-                game.setScreen(new GameOverScreen(game));
+                loseRun(game);
             }
         }
     }
@@ -386,9 +402,9 @@ public class GameState {
     private void advancePastStage(final RougeletteGame game) {
         // The run is only won once the LAST stage (and its final boss) is cleared -- reaching the
         // $1M total earlier just banks it; you must still play out the remaining stages and bosses.
-        boolean finalStageCleared = currentStage >= STAGE_TARGETS.length;
+        boolean finalStageCleared = currentStage >= runConfig.getStageCount();
         if (finalStageCleared && player.getBalance() >= finalGoal) {
-            game.setScreen(new YouWinScreen(game, game.getScreen()));
+            winRun(game);
         } else {
             startShopPhase();
         }
@@ -440,7 +456,7 @@ public class GameState {
     public void resolveBossSpin(final RougeletteGame game) {
         if (player.isDead()) {
             endBossFight();
-            game.setScreen(new GameOverScreen(game));
+            loseRun(game);
             return;
         }
         bossSpinsRemaining--;
@@ -453,7 +469,7 @@ public class GameState {
         } else if (bossSpinsRemaining <= 0) {
             // out of spins, goal not met -> the boss wins
             endBossFight();
-            game.setScreen(new GameOverScreen(game));
+            loseRun(game);
         }
         // otherwise: stay in the fight (caller restores BOSS_FIGHT)
     }
@@ -573,22 +589,15 @@ public class GameState {
     }
 
     private int getRoundsForStage(int stage) {
-        return STAGE_ROUNDS[Math.min(stage, STAGE_ROUNDS.length) - 1];
+        return runConfig.getStageRounds(stage);
     }
 
     private long getRequiredChipsForStage(int stage) {
-        return STAGE_TARGETS[Math.min(stage, STAGE_TARGETS.length) - 1];
+        return runConfig.getStageTarget(stage);
     }
 
-    /**
-     * Prices scale with the target curve so an item stays a roughly constant fraction of your
-     * bankroll across the whole run, instead of the old runaway 10x/stage that priced you out of
-     * the shop in the late game. The opening shop (stage 1) uses base prices; every later shop
-     * opens having just cleared the previous stage, so we scale by that stage's target.
-     */
     private int getPriceMultiplier(int stage) {
-        if (stage <= 1) return 1;
-        return Math.max(1, Math.round(STAGE_TARGETS[stage - 2] / 100f));
+        return runConfig.getPriceMultiplier(stage);
     }
 
     /** Borrowed Time: marks the current round as not counting toward the stage's round limit. */

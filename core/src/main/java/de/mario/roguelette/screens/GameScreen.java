@@ -18,6 +18,7 @@ import de.mario.roguelette.Player;
 import de.mario.roguelette.RougeletteGame;
 import de.mario.roguelette.balls.Ball;
 import de.mario.roguelette.betting.Bet;
+import de.mario.roguelette.config.RunConfig;
 import de.mario.roguelette.characters.Character;
 import de.mario.roguelette.betting.BetType;
 import de.mario.roguelette.events.LandingContext;
@@ -80,12 +81,16 @@ public class GameScreen implements Screen {
 
     @Override
     public void show() {
+        // The run's rule set: baseline defaults seeded from the character. Casino Curses will
+        // apply their modifiers here, between baseline() and the run construction below.
+        RunConfig runConfig = RunConfig.baseline(character);
+
         Inventory inventory = new Inventory();
-        Player player = new Player(inventory, character);
+        Player player = new Player(inventory, character, runConfig.getStartingBalance());
         Wheel wheel = WheelFactory.createClassicWheel();
         BetManager betManager = new BetManager();
-        Shop shop = new Shop();
-        gameState = new GameState(player, wheel, betManager, shop, game.getMusicManager());
+        Shop shop = new Shop(runConfig);
+        gameState = new GameState(player, wheel, betManager, shop, game.getMusicManager(), runConfig);
         gameState.setState(GameState.GameStateMode.SHOP_OPEN); // start with open shop
 
         camera = new OrthographicCamera();

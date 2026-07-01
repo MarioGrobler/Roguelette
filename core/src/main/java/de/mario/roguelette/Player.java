@@ -16,10 +16,14 @@ public class Player {
     private final Character character;
     private final List<GameEventListener> characterListeners;
 
-    public Player(final Inventory inventory, final Character character) {
+    /**
+     * @param startingBalance from the run's {@code RunConfig} (baseline = the character's starting
+     *                        balance; Casino Curses may modify it)
+     */
+    public Player(final Inventory inventory, final Character character, final long startingBalance) {
         this.inventory = inventory;
         this.character = character;
-        this.balance = character.getStartingBalance();
+        this.balance = startingBalance;
         this.name = character.getName();
         this.characterListeners = character.createListeners();
     }

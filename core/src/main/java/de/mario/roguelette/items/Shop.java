@@ -1,5 +1,6 @@
 package de.mario.roguelette.items;
 
+import de.mario.roguelette.config.RunConfig;
 import de.mario.roguelette.items.chances.ChanceShopItem;
 import de.mario.roguelette.items.fortunes.FortuneShopItem;
 import de.mario.roguelette.items.segments.DeleteSegmentShopItem;
@@ -15,34 +16,16 @@ public class Shop {
 
     private final RandomItemGenerator randomItemGenerator = new RandomItemGenerator();
 
-    // Extra discount applied to the opening (stage 1) shop only: the early game has the least money
-    // and the weakest items, so make the first shop's items meaningfully cheaper to ease the start.
-    private static final float FIRST_SHOP_DISCOUNT = 0.6f;
-
-    // --- Segment Remover budget & pricing (tunable) ---
-    // A per-stage allowance that shrinks over the run: generous early (shape the board's odds --
-    // drop the 0, prune a few segments for a >50% wheel) but tight late, where deletion combined
-    // with recolour items (Paint It Black, Scarlet Surge) could otherwise assemble a 100%-win
-    // "no-brainer" board. Clamps to the last entry for higher stages.
-    // Generous early (shape the board's odds), then OFF from stage 4 on: even one removal per late
-    // stage lets you prune the last few unwanted segments into a near-trivial board, so removal is a
-    // strictly early-game tool now. Stages 1/2/3 -> 5/3/1 removers; stage 4+ -> 0 (none offered).
-    private static final int[] DELETE_BUDGET = {5, 3, 1, 0};
-    // Base price of the FIRST remover in a stage; doubles on each use within the stage. Cheap early
-    // (early odds-shaping is intended), scaling up so late removals cost real money on top of being
-    // rationed.
-    private static final int[] DELETE_BASE_COST = {1, 10, 30, 90, 300, 1000, 3000, 10000};
-
-    // Restocks aren't hard-capped (rarity stage-gating already prevents fishing the shop for a
-    // game-breaker). Instead the price escalates geometrically: a cheap first reroll that quickly
-    // becomes a real money sink, so rerolling for synergy is a genuine economic decision.
-    private static final int RESTOCK_BASE = 3;
+    // All tunables (first-shop discount, Segment Remover budget & pricing, restock base price)
+    // live in the run's RunConfig — the balance rationale is documented there, and Casino Curses
+    // modify them per run without touching this class.
+    private final RunConfig runConfig;
 
     private int currentStage = 1;      // drives rarity stage-gating of generated items
     private int priceMultiplier = 1;   // current stage's price scaling for normal items
     private int deletesThisStage = 0;
-    private int deleteBudget = DELETE_BUDGET[0];
-    private int deleteBaseCost = DELETE_BASE_COST[0];
+    private int deleteBudget;
+    private int deleteBaseCost;
 
     private int restocks;
 
@@ -50,7 +33,8 @@ public class Shop {
     // restock counter. Cleared when the shop closes / a new shop stage starts.
     private boolean freeRestocks = false;
 
-    public Shop() {
+    public Shop(final RunConfig runConfig) {
+        this.runConfig = runConfig;
         startStage(1, 1);
     }
 
@@ -63,15 +47,11 @@ public class Shop {
         this.currentStage = stage;
         this.priceMultiplier = priceMultiplier;
         this.deletesThisStage = 0;
-        this.deleteBudget = pick(DELETE_BUDGET, stage);
-        this.deleteBaseCost = pick(DELETE_BASE_COST, stage);
+        this.deleteBudget = runConfig.getDeleteBudget(stage);
+        this.deleteBaseCost = runConfig.getDeleteBaseCost(stage);
         this.freeRestocks = false;
         restockItems();
         resetRestocks();
-    }
-
-    private static int pick(int[] arr, int stage) {
-        return arr[Math.min(Math.max(stage, 1), arr.length) - 1];
     }
 
     public void restockItems() {
@@ -117,7 +97,7 @@ public class Shop {
 
     /** Scales the prices of normal items by the current stage multiplier (delete is priced separately). */
     private void applyPriceMultiplier() {
-        float factor = priceMultiplier * (currentStage == 1 ? FIRST_SHOP_DISCOUNT : 1f);
+        float factor = priceMultiplier * (currentStage == 1 ? runConfig.getFirstShopDiscount() : 1f);
         for (ChanceShopItem item : chances) {
             item.cost = scale(item.cost, factor);
         }
@@ -159,6 +139,6 @@ public class Shop {
         // Cheap first reroll, doubling each time (a self-limiting money sink), scaled by the stage so
         // it stays meaningful late. Exponent clamped to avoid int overflow at absurd restock counts.
         int exp = Math.min(restocks, 15);
-        return RESTOCK_BASE * (1 << exp) * factor;
+        return runConfig.getRestockBase() * (1 << exp) * factor;
     }
 }
