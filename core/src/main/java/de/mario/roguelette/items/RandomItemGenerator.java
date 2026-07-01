@@ -8,12 +8,17 @@ import de.mario.roguelette.items.chances.FreezeChance;
 import de.mario.roguelette.items.chances.InsuranceChance;
 import de.mario.roguelette.items.chances.LuckySevenChance;
 import de.mario.roguelette.items.chances.MirrorFateChance;
+import de.mario.roguelette.items.chances.OverchargeChance;
 import de.mario.roguelette.items.chances.RicochetChance;
+import de.mario.roguelette.items.fortunes.BookkeeperFortune;
 import de.mario.roguelette.items.fortunes.ComebackKidFortune;
 import de.mario.roguelette.items.fortunes.FortuneShopItem;
+import de.mario.roguelette.items.fortunes.HighRollerFortune;
 import de.mario.roguelette.items.fortunes.InterestFortune;
+import de.mario.roguelette.items.fortunes.LaPartageFortune;
 import de.mario.roguelette.items.fortunes.LightningStormFortune;
 import de.mario.roguelette.items.fortunes.PaintItBlackFortune;
+import de.mario.roguelette.items.fortunes.RentCollectorFortune;
 import de.mario.roguelette.items.fortunes.ScarletSurgeFortune;
 import de.mario.roguelette.items.fortunes.StreakBonusFortune;
 import de.mario.roguelette.items.segments.AddSegmentShopItem;
@@ -110,6 +115,7 @@ public class RandomItemGenerator {
         pool.add(rar(new InsuranceChance(), Rarity.COMMON));
         pool.add(rar(new LuckySevenChance(), Rarity.UNCOMMON));
         pool.add(rar(new RicochetChance(), Rarity.COMMON));
+        pool.add(rar(new OverchargeChance(), Rarity.UNCOMMON));
         pool.add(rar(new FreezeChance(), Rarity.RARE));
         pool.add(rar(new DoubleBallChance(), Rarity.RARE));
 
@@ -127,6 +133,10 @@ public class RandomItemGenerator {
         pool.add(rar(new InterestFortune(), Rarity.UNCOMMON));
         pool.add(rar(new ComebackKidFortune(), Rarity.COMMON));
         pool.add(rar(new StreakBonusFortune(), Rarity.UNCOMMON));
+        pool.add(rar(new LaPartageFortune(), Rarity.COMMON));
+        pool.add(rar(new BookkeeperFortune(), Rarity.COMMON));
+        pool.add(rar(new HighRollerFortune(), Rarity.UNCOMMON));
+        pool.add(rar(new RentCollectorFortune(), Rarity.UNCOMMON));
 
         // Duplicates ARE allowed: most fortunes stack as independent listeners, and the ones that
         // would otherwise snowball (Paint It Black / Scarlet Surge) instead use an explicit,

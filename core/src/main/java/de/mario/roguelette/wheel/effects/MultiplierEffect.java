@@ -1,9 +1,9 @@
 package de.mario.roguelette.wheel.effects;
 
 public class MultiplierEffect extends SegmentEffect implements MultiplierModifier {
-    private final int factor;
+    private final float factor;
 
-    public MultiplierEffect(int rounds, int factor) {
+    public MultiplierEffect(int rounds, float factor) {
         super(rounds);
         this.factor = factor;
     }

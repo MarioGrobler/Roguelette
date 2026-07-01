@@ -14,16 +14,10 @@ public class CrystalBallChance extends ChanceShopItem {
 
     @Override
     public void onActivate(final GameState gameState) {
+        // The orb never lies (legendary buff): the shown segment IS the next landing.
         int index = MathUtils.random(gameState.getWheel().size() - 1);
         gameState.setCrystalBallSegment(gameState.getWheel().getSegmentAt(index));
-        gameState.pushState(GameState.GameStateMode.SHOW_CRYSTAL_BALL, 2.5f, () -> {
-            // 20% chance of lie!
-            if (MathUtils.random() < 0.2) {
-                gameState.resetCrystalBallSegment();
-            }
-        });
-
-        System.out.println(gameState.getWheel().getSegmentAt(index).getDescription());
+        gameState.pushState(GameState.GameStateMode.SHOW_CRYSTAL_BALL, 2.5f, () -> {});
     }
 
     @Override
@@ -33,6 +27,6 @@ public class CrystalBallChance extends ChanceShopItem {
 
     @Override
     public String getDescription() {
-        return "Get a glimpse of what fade may hold. But beware: truth and illusion often dance as one within its glow...";
+        return "Legendary. Gaze into the orb and see where fate will fall. What the glass shows, the wheel obeys.";
     }
 }
