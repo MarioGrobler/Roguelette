@@ -1,5 +1,6 @@
 package de.mario.roguelette;
 
+import de.mario.roguelette.balls.Ball;
 import de.mario.roguelette.boss.Boss;
 import de.mario.roguelette.boss.BossRoster;
 import de.mario.roguelette.events.BetResolution;
@@ -329,7 +330,15 @@ public class GameState {
      * ball this is equivalent to {@link #applyReturnOfBets(Segment)}.
      */
     public void applyReturnOfBets(final List<Segment> segments) {
-        player.earn(betManager.computeReturn(segments, this));
+        applyReturnOfBets(segments, null);
+    }
+
+    /**
+     * Like {@link #applyReturnOfBets(List)}, with the ball behind each landing (parallel list) so
+     * per-ball payout factors apply (e.g. Twin Ball's half-strength extra ball).
+     */
+    public void applyReturnOfBets(final List<Segment> segments, final List<Ball> balls) {
+        player.earn(betManager.computeReturn(segments, balls, this));
         betManager.clear();
     }
 

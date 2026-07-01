@@ -8,6 +8,7 @@ import de.mario.roguelette.items.fortunes.FortuneShopItem;
 import de.mario.roguelette.items.fortunes.GoldenTouchFortune;
 import de.mario.roguelette.items.fortunes.HotStreakFortune;
 import de.mario.roguelette.items.fortunes.SafetyNetFortune;
+import de.mario.roguelette.items.fortunes.TwinBallFortune;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -34,6 +35,7 @@ public final class LegendaryPool {
         pool.add(tag(new GoldenTouchFortune()));
         pool.add(tag(new SafetyNetFortune()));
         pool.add(tag(new HotStreakFortune()));
+        pool.add(tag(new TwinBallFortune()));
         pool.add(tag(new CrystalBallChance()));
         return pool;
     }

@@ -3,24 +3,32 @@ package de.mario.roguelette.balls;
 import com.badlogic.gdx.graphics.Color;
 
 /**
- * A single ball taking part in one spin. Today it only carries a display tint so multiple balls
- * are visually distinguishable, but it is the natural place to hang future per-ball behaviour:
- * the planned character-style "ball players" (a default ball, a red ball that pays more on red,
- * ...) would each supply their own {@link Ball}, and ball-related chances (e.g. Double Ball)
- * add extra ones to a {@link de.mario.roguelette.events.SpinContext} before the spin.
+ * A single ball taking part in one spin. Carries a display tint so multiple balls are visually
+ * distinguishable, and a payout factor scaling every win this ball's landing produces (the
+ * per-ball payout bias planned for ball "players"; Twin Ball's permanent extra ball pays 50%).
+ * Still the natural place to hang future per-ball behaviour: the planned character-style "ball
+ * players" (a default ball, a red ball that pays more on red, ...) would each supply their own
+ * {@link Ball}, and ball-related chances (e.g. Double Ball) add extra ones to a
+ * {@link de.mario.roguelette.events.SpinContext} before the spin.
  */
 public class Ball {
 
     private final Color tint;
     private final String name;
+    private final float payoutFactor;
 
     public Ball(final Color tint) {
         this(tint, "Classic Ball");
     }
 
     public Ball(final Color tint, final String name) {
+        this(tint, name, 1f);
+    }
+
+    public Ball(final Color tint, final String name, final float payoutFactor) {
         this.tint = tint;
         this.name = name;
+        this.payoutFactor = payoutFactor;
     }
 
     /**
@@ -39,5 +47,10 @@ public class Ball {
     /** Display name shown on the character-select signature-ball chip. */
     public String getName() {
         return name;
+    }
+
+    /** Scales the winnings of every bet this ball's landing wins (1 = full payout). */
+    public float getPayoutFactor() {
+        return payoutFactor;
     }
 }

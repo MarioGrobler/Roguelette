@@ -16,6 +16,7 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import de.mario.roguelette.GameState;
 import de.mario.roguelette.Player;
 import de.mario.roguelette.RougeletteGame;
+import de.mario.roguelette.balls.Ball;
 import de.mario.roguelette.betting.Bet;
 import de.mario.roguelette.characters.Character;
 import de.mario.roguelette.betting.BetType;
@@ -377,6 +378,7 @@ public class GameScreen implements Screen {
         // assign each ball a landing (the primary keeps its rolled index; extras roll their own,
         // also subject to landing listeners), then resolve screen targets against the fixed rotation
         List<Segment> landedSegments = new ArrayList<>();
+        List<Ball> landedBalls = new ArrayList<>(); // parallel to landedSegments (per-ball payout factor)
         List<Float> ballTargets = new ArrayList<>();
         List<Color> ballTints = new ArrayList<>();
         for (int b = 0; b < spin.ballCount(); b++) {
@@ -389,6 +391,7 @@ public class GameScreen implements Screen {
                 idx = extra.getSegmentIndex();
             }
             landedSegments.add(gameState.getWheel().getSegmentAt(idx));
+            landedBalls.add(spin.getBalls().get(b));
             ballTargets.add(wheelRenderer.getSegmentCenterBaseAngle(idx) + wheelRotation);
             ballTints.add(spin.getBalls().get(b).getTint());
         }
@@ -398,7 +401,7 @@ public class GameScreen implements Screen {
         wheelRenderer.spinBalls(ballTargets, ballTints, () -> {
             // turn change
             gameState.getPlayer().pay(gameState.getBetManager().totalAmount());
-            gameState.applyReturnOfBets(landedSegments);
+            gameState.applyReturnOfBets(landedSegments, landedBalls);
 
             if (bossFight) {
                 // the boss debuff's turn effects (e.g. the Leech's tithe) apply first, then we check

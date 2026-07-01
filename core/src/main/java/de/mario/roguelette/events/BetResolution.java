@@ -19,6 +19,7 @@ public class BetResolution {
     private float baseAdd = 0f;
     private float totalMul = 1f;
     private float refundFraction = 0f;
+    private boolean refundsSuppressed = false;
 
     public BetResolution(final Bet bet, final Segment landed, final boolean win) {
         this.bet = bet;
@@ -53,6 +54,14 @@ public class BetResolution {
         this.refundFraction += fraction;
     }
 
+    /**
+     * Disables every refund on this resolution (e.g. All or Nothing), regardless of listener
+     * order: refunds added before or after this call are equally void.
+     */
+    public void suppressRefunds() {
+        this.refundsSuppressed = true;
+    }
+
     public float getBaseAdd() {
         return baseAdd;
     }
@@ -62,6 +71,6 @@ public class BetResolution {
     }
 
     public float getRefundFraction() {
-        return refundFraction;
+        return refundsSuppressed ? 0f : refundFraction;
     }
 }
