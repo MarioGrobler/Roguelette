@@ -54,7 +54,7 @@ public class PaintItBlackFortune extends FortuneShopItem {
             if (paints < maxPaints(copies)) {
                 List<Segment> nonBlacks = new ArrayList<>();
                 for (Segment segment : gameState.getWheel().getSegments()) {
-                    if (segment.getColor() != Segment.SegmentColor.BLACK) {
+                    if (segment.getColor() != Segment.SegmentColor.BLACK && segment.isRecolorable()) {
                         nonBlacks.add(segment);
                     }
                 }

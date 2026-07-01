@@ -4,6 +4,7 @@ import de.mario.roguelette.balls.Ball;
 import de.mario.roguelette.boss.Boss;
 import de.mario.roguelette.boss.BossRoster;
 import de.mario.roguelette.config.RunConfig;
+import de.mario.roguelette.curses.Curse;
 import de.mario.roguelette.events.BetResolution;
 import de.mario.roguelette.events.GameEventListener;
 import de.mario.roguelette.events.LandingContext;
@@ -37,6 +38,9 @@ public class GameState {
     private final MusicManager musicManager;
 
     private final PendingChanceManager pendingChanceManager = new PendingChanceManager();
+    // Casino Curses active this run (empty at level 0); their listeners join collectListeners()
+    private List<Curse> activeCurses = Collections.emptyList();
+    private final List<GameEventListener> curseListeners = new ArrayList<>();
     private DeleteSegmentShopItem pendingDeleteItem = null;
     private WheelSelectChance pendingChanceItem = null;
     private Segment crystalBallSegment = null;
@@ -122,6 +126,23 @@ public class GameState {
 
     public RunConfig getRunConfig() {
         return runConfig;
+    }
+
+    /**
+     * Registers the run's active Casino Curses: collects their passive listeners and runs their
+     * one-time setup (wheel mutation etc.). Call once, right after construction — their
+     * {@code applyToConfig} must already have happened before the run was built.
+     */
+    public void setActiveCurses(final List<Curse> curses) {
+        this.activeCurses = curses;
+        for (Curse curse : curses) {
+            curseListeners.addAll(curse.createListeners());
+            curse.applyRunSetup(this);
+        }
+    }
+
+    public List<Curse> getActiveCurses() {
+        return activeCurses;
     }
 
     // getters for important objects
@@ -227,6 +248,8 @@ public class GameState {
     private List<GameEventListener> collectListeners() {
         List<GameEventListener> listeners = new ArrayList<>();
         listeners.addAll(player.getCharacterListeners());
+        // curses are house-side run rules, as fundamental as the character: right after it
+        listeners.addAll(curseListeners);
         listeners.addAll(player.getInventory().getFortunes());
         listeners.addAll(pendingChanceManager.getActiveChances());
         // the active boss's debuff resolves last, on top of the player's own engine
@@ -358,13 +381,15 @@ public class GameState {
 
     /** Ends the run as a loss: records it to the profile, then shows the game-over screen. */
     private void loseRun(final RougeletteGame game) {
-        game.getProfileManager().recordRunEnd(player.getCharacter().getName(), false, player.getBalance());
+        game.getProfileManager().recordRunEnd(player.getCharacter().getName(), false,
+            player.getBalance(), runConfig.getCurseLevel());
         game.setScreen(new GameOverScreen(game));
     }
 
-    /** Ends the run as the win: records it to the profile, then shows the you-win screen. */
+    /** Ends the run as the win: records it to the profile (incl. curse progress), then shows the you-win screen. */
     private void winRun(final RougeletteGame game) {
-        game.getProfileManager().recordRunEnd(player.getCharacter().getName(), true, player.getBalance());
+        game.getProfileManager().recordRunEnd(player.getCharacter().getName(), true,
+            player.getBalance(), runConfig.getCurseLevel());
         game.setScreen(new YouWinScreen(game, game.getScreen()));
     }
 
@@ -419,7 +444,8 @@ public class GameState {
      */
     private void startBossRound() {
         currentBoss = BossRoster.forStage(currentStage);
-        bossSpinsRemaining = currentBoss.getSpinCount();
+        // curses may shorten boss fights (bossSpinDelta <= 0); never below one spin
+        bossSpinsRemaining = Math.max(1, currentBoss.getSpinCount() + runConfig.getBossSpinDelta());
         bossListeners = null;
         // NB: the goal/start-balance snapshot is deferred to beginBossFight (see below).
         bossStartBalance = 0;

@@ -8,6 +8,7 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.utils.Align;
+import de.mario.roguelette.wheel.DevilSegment;
 import de.mario.roguelette.wheel.Segment;
 
 import java.text.DecimalFormat;
@@ -24,9 +25,14 @@ public class SegmentDraw extends SegmentDrawBase {
 
     private static final Color BOTH_COLOR = new Color(0.6f, 0.2f, 0.7f, 1f); // Purple/magenta for "wild"
 
+    private static final Color DEVIL_COLOR = new Color(0.24f, 0.04f, 0.07f, 1f); // hellish near-black red
+
     private Color getDrawingColorFromSegment(final Segment segment) {
         if (segment == null) {
             return Color.PINK;
+        }
+        if (segment instanceof DevilSegment) {
+            return DEVIL_COLOR; // colourless like the 0, but must not read as a friendly green
         }
 
         switch(segment.getCurrentColor()) {

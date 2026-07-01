@@ -69,14 +69,20 @@ public class ProfileManager {
         return profile;
     }
 
-    /** Records a finished run (won or lost) for the given character and saves. */
-    public void recordRunEnd(final String characterName, final boolean won, final long finalBalance) {
+    /**
+     * Records a finished run (won or lost) for the given character and saves. A win at curse
+     * level L advances the character's {@code highestCurseBeaten} (which gates level L+1 on the
+     * select screen).
+     */
+    public void recordRunEnd(final String characterName, final boolean won, final long finalBalance,
+                             final int curseLevel) {
         profile.totalRuns++;
         Profile.CharacterProgress cp = profile.characterProgress(characterName);
         cp.runs++;
         if (won) {
             profile.totalWins++;
             cp.wins++;
+            cp.highestCurseBeaten = Math.max(cp.highestCurseBeaten, curseLevel);
         }
         profile.bestBalance = Math.max(profile.bestBalance, finalBalance);
         save();

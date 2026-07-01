@@ -34,8 +34,16 @@ public class RunConfig {
     private int[] deleteBaseCost = {1, 10, 30, 90, 300, 1000, 3000, 10000};
     // Restock price: cheap first reroll, doubling each time, scaled by stage.
     private int restockBase = 3;
+    // Global factor on all shop item prices (curses raise it; 1 = normal).
+    private float shopPriceFactor = 1f;
 
     private long startingBalance = 100;
+
+    // How many spins a boss fight grants relative to the boss's own count (curses subtract).
+    private int bossSpinDelta = 0;
+
+    // The Casino Curses level this run is played at (0 = clean run). Recorded on a win.
+    private int curseLevel = 0;
 
     /** The baseline (un-cursed) run for the given character. */
     public static RunConfig baseline(final Character character) {
@@ -93,8 +101,20 @@ public class RunConfig {
         return restockBase;
     }
 
+    public float getShopPriceFactor() {
+        return shopPriceFactor;
+    }
+
     public long getStartingBalance() {
         return startingBalance;
+    }
+
+    public int getBossSpinDelta() {
+        return bossSpinDelta;
+    }
+
+    public int getCurseLevel() {
+        return curseLevel;
     }
 
     // --- Modifiers (for Casino Curses; applied between baseline() and run start) ---
@@ -127,6 +147,18 @@ public class RunConfig {
         this.startingBalance = startingBalance;
     }
 
+    public void setShopPriceFactor(float shopPriceFactor) {
+        this.shopPriceFactor = shopPriceFactor;
+    }
+
+    public void setBossSpinDelta(int bossSpinDelta) {
+        this.bossSpinDelta = bossSpinDelta;
+    }
+
+    public void setCurseLevel(int curseLevel) {
+        this.curseLevel = curseLevel;
+    }
+
     /** Scales every stage target by the given factor (a classic curse: "all goals ×k"). */
     public void scaleStageTargets(float factor) {
         long[] scaled = new long[stageTargets.length];
@@ -134,5 +166,23 @@ public class RunConfig {
             scaled[i] = Math.max(1, Math.round(stageTargets[i] * (double) factor));
         }
         this.stageTargets = scaled;
+    }
+
+    /** Adds a delta to every stage's round count, floored at 1 (the "fewer rounds" curse). */
+    public void adjustStageRounds(int delta) {
+        int[] adjusted = new int[stageRounds.length];
+        for (int i = 0; i < stageRounds.length; i++) {
+            adjusted[i] = Math.max(1, stageRounds[i] + delta);
+        }
+        this.stageRounds = adjusted;
+    }
+
+    /** Scales the per-stage Segment Remover allowance (rounding down; the "dull knife" curse). */
+    public void scaleDeleteBudget(float factor) {
+        int[] scaled = new int[deleteBudget.length];
+        for (int i = 0; i < deleteBudget.length; i++) {
+            scaled[i] = (int) (deleteBudget[i] * factor);
+        }
+        this.deleteBudget = scaled;
     }
 }

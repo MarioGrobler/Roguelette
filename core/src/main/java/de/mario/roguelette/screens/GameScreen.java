@@ -19,6 +19,8 @@ import de.mario.roguelette.RougeletteGame;
 import de.mario.roguelette.balls.Ball;
 import de.mario.roguelette.betting.Bet;
 import de.mario.roguelette.config.RunConfig;
+import de.mario.roguelette.curses.Curse;
+import de.mario.roguelette.curses.CurseLevels;
 import de.mario.roguelette.characters.Character;
 import de.mario.roguelette.betting.BetType;
 import de.mario.roguelette.events.LandingContext;
@@ -55,6 +57,7 @@ public class GameScreen implements Screen {
 
     private final RougeletteGame game;
     private final Character character;
+    private final int curseLevel;
 
     private OrthographicCamera camera;
     private ShapeRenderer shapeRenderer;
@@ -74,16 +77,26 @@ public class GameScreen implements Screen {
     private GameState gameState;
 
     public GameScreen(RougeletteGame game, Character character) {
+        this(game, character, 0);
+    }
+
+    public GameScreen(RougeletteGame game, Character character, int curseLevel) {
         this.game = game;
         this.character = character;
+        this.curseLevel = curseLevel;
     }
 
 
     @Override
     public void show() {
-        // The run's rule set: baseline defaults seeded from the character. Casino Curses will
-        // apply their modifiers here, between baseline() and the run construction below.
+        // The run's rule set: baseline defaults seeded from the character, then the active Casino
+        // Curses bend it before anything reads it.
         RunConfig runConfig = RunConfig.baseline(character);
+        runConfig.setCurseLevel(curseLevel);
+        List<Curse> curses = CurseLevels.rollForLevel(curseLevel);
+        for (Curse curse : curses) {
+            curse.applyToConfig(runConfig);
+        }
 
         Inventory inventory = new Inventory();
         Player player = new Player(inventory, character, runConfig.getStartingBalance());
@@ -91,6 +104,7 @@ public class GameScreen implements Screen {
         BetManager betManager = new BetManager();
         Shop shop = new Shop(runConfig);
         gameState = new GameState(player, wheel, betManager, shop, game.getMusicManager(), runConfig);
+        gameState.setActiveCurses(curses); // listeners + one-time setup (e.g. the Devil's Segment)
         gameState.setState(GameState.GameStateMode.SHOP_OPEN); // start with open shop
 
         camera = new OrthographicCamera();

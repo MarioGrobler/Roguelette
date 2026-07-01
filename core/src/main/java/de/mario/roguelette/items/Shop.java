@@ -97,7 +97,9 @@ public class Shop {
 
     /** Scales the prices of normal items by the current stage multiplier (delete is priced separately). */
     private void applyPriceMultiplier() {
-        float factor = priceMultiplier * (currentStage == 1 ? runConfig.getFirstShopDiscount() : 1f);
+        float factor = priceMultiplier
+            * (currentStage == 1 ? runConfig.getFirstShopDiscount() : 1f)
+            * runConfig.getShopPriceFactor(); // curse-side global price hike (1 = normal)
         for (ChanceShopItem item : chances) {
             item.cost = scale(item.cost, factor);
         }

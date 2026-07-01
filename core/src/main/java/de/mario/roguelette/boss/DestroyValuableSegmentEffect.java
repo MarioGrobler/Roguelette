@@ -31,6 +31,9 @@ public class DestroyValuableSegmentEffect implements GameEventListener {
         int bestIndex = -1;
         double bestValue = Double.NEGATIVE_INFINITY;
         for (int i = 0; i < wheel.size(); i++) {
+            if (wheel.getSegmentAt(i).isUnremovable()) {
+                continue; // cursed segments (Devil's Segment) can't be destroyed, even by the Devil
+            }
             double v = value(wheel.getSegmentAt(i));
             if (v > bestValue) {
                 bestValue = v;

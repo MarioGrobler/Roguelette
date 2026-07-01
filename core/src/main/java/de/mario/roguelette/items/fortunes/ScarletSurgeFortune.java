@@ -52,7 +52,7 @@ public class ScarletSurgeFortune extends FortuneShopItem {
             if (paints < maxPaints(copies)) {
                 List<Segment> nonReds = new ArrayList<>();
                 for (Segment segment : gameState.getWheel().getSegments()) {
-                    if (segment.getColor() != Segment.SegmentColor.RED) {
+                    if (segment.getColor() != Segment.SegmentColor.RED && segment.isRecolorable()) {
                         nonReds.add(segment);
                     }
                 }

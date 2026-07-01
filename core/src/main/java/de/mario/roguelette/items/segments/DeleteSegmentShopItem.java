@@ -43,6 +43,9 @@ public class DeleteSegmentShopItem extends SegmentShopItem {
      * @return true if successful
      */
     public boolean tryBuy(final GameState gameState, int segmentIndex) {
+        if (gameState.getWheel().getSegmentAt(segmentIndex).isUnremovable()) {
+            return false; // cursed segment (e.g. the Devil's Segment): stay in select mode, no charge
+        }
         if (!sold && canBuy(gameState.getPlayer())) {
             gameState.getWheel().removeSegmentAt(segmentIndex);
             gameState.getPlayer().pay(getCost(gameState.getPlayer()));

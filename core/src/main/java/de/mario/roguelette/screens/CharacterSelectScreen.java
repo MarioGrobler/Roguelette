@@ -17,6 +17,7 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import de.mario.roguelette.RougeletteGame;
 import de.mario.roguelette.characters.Character;
 import de.mario.roguelette.characters.Characters;
+import de.mario.roguelette.curses.CurseLevels;
 import de.mario.roguelette.render.RoundedRectRenderer;
 import de.mario.roguelette.util.ColorHelper;
 
@@ -57,6 +58,9 @@ public class CharacterSelectScreen implements Screen {
     private RoundedRectRenderer infoPanel;
     private Rectangle infoBounds;
     private int focused = 0;
+
+    // Casino Curses level for the next run; clamped per character to (highest beaten + 1)
+    private int curseLevel = 0;
 
     private static final float CHIP_SIZE = 70f;
     private static final float NAME_BAND = 60f;
@@ -193,9 +197,10 @@ public class CharacterSelectScreen implements Screen {
         }
         shapeRenderer.end();
 
-        // --- batch pass 2: info panel + hint ---
+        // --- batch pass 2: info panel + curse selector + hint ---
         batch.begin();
         drawInfoPanel(characters.get(focused));
+        drawCurseSelector(w);
         layout.setText(bodyFont, "Click a card, or use LEFT / RIGHT and ENTER", new Color(1, 1, 1, 0.55f), w, Align.center, false);
         bodyFont.draw(batch, layout, 0, infoBounds.y - 14f);
         batch.end();
@@ -242,6 +247,25 @@ public class CharacterSelectScreen implements Screen {
         bodyFont.draw(batch, layout, x, y);
     }
 
+    /** The highest curse level selectable for the given character (highest beaten + 1, capped). */
+    private int maxSelectableLevel(int characterIndex) {
+        String name = characters.get(characterIndex).getName();
+        int beaten = game.getProfileManager().getProfile().characterProgress(name).highestCurseBeaten;
+        return Math.min(CurseLevels.MAX_LEVEL, beaten + 1);
+    }
+
+    /** The Casino-Curses level selector line, between the cards and the info panel. */
+    private void drawCurseSelector(float screenWidth) {
+        int max = maxSelectableLevel(focused);
+        Color color = curseLevel == 0
+            ? new Color(0.7f, 0.7f, 0.7f, 0.9f)
+            : new Color(0.9f, 0.35f, 0.3f, 1f);
+        String text = "Casino Curses  Lv " + curseLevel + "/" + max + " (UP / DOWN)   "
+            + CurseLevels.describeLevel(curseLevel);
+        layout.setText(bodyFont, text, color, screenWidth, Align.center, false);
+        bodyFont.draw(batch, layout, 0, infoBounds.y + infoBounds.height + 26f);
+    }
+
     /** Draws a ball matching the in-game look: dark outline ring, tinted body, white highlight. */
     private void drawBall(float cx, float cy, float r, Color tint) {
         shapeRenderer.setColor(0f, 0f, 0f, 0.55f);
@@ -273,6 +297,15 @@ public class CharacterSelectScreen implements Screen {
         if (Gdx.input.isKeyJustPressed(Input.Keys.LEFT) || Gdx.input.isKeyJustPressed(Input.Keys.A)) {
             focused = (focused - 1 + characters.size()) % characters.size();
         }
+
+        // Casino Curses level (per-character unlock: beaten + 1)
+        if (Gdx.input.isKeyJustPressed(Input.Keys.UP) || Gdx.input.isKeyJustPressed(Input.Keys.W)) {
+            curseLevel = Math.min(curseLevel + 1, maxSelectableLevel(focused));
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.DOWN) || Gdx.input.isKeyJustPressed(Input.Keys.S)) {
+            curseLevel = Math.max(curseLevel - 1, 0);
+        }
+        curseLevel = Math.min(curseLevel, maxSelectableLevel(focused)); // focus change may lower the cap
         for (int i = 0; i < characters.size() && i < 9; i++) {
             if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_1 + i)) {
                 focused = i;
@@ -296,7 +329,7 @@ public class CharacterSelectScreen implements Screen {
     }
 
     private void confirm() {
-        game.setScreen(new GameScreen(game, characters.get(focused)));
+        game.setScreen(new GameScreen(game, characters.get(focused), curseLevel));
     }
 
     @Override

@@ -31,6 +31,24 @@ public abstract class Segment {
         this.multiplier = multiplier;
     }
 
+    /**
+     * Whether this segment can be removed from the wheel (Segment Remover, the Devil's
+     * destroy-segment effect, ...). Cursed segments (e.g. the Devil's Segment) override to false;
+     * every wheel-mutation point must honour this.
+     */
+    public boolean isUnremovable() {
+        return false;
+    }
+
+    /**
+     * Whether permanent recolours (Paint It Black, Scarlet Surge) may target this segment.
+     * Cursed segments override to false — painting the Devil's Segment red/black would make it
+     * winnable and un-curse it by accident.
+     */
+    public boolean isRecolorable() {
+        return true;
+    }
+
     public SegmentColor getColor() {
         return color;
     }

@@ -19,6 +19,7 @@ public class BetResolution {
     private float baseAdd = 0f;
     private float totalMul = 1f;
     private float refundFraction = 0f;
+    private float refundFactor = 1f;
     private boolean refundsSuppressed = false;
 
     public BetResolution(final Bet bet, final Segment landed, final boolean win) {
@@ -62,6 +63,14 @@ public class BetResolution {
         this.refundsSuppressed = true;
     }
 
+    /**
+     * Scales every refund on this resolution (e.g. the "Frayed Nets" curse halving all refunds).
+     * A factor, not a subtraction, so it is order-independent like {@link #suppressRefunds()}.
+     */
+    public void multiplyRefund(final float factor) {
+        this.refundFactor *= factor;
+    }
+
     public float getBaseAdd() {
         return baseAdd;
     }
@@ -71,6 +80,6 @@ public class BetResolution {
     }
 
     public float getRefundFraction() {
-        return refundsSuppressed ? 0f : refundFraction;
+        return refundsSuppressed ? 0f : refundFraction * refundFactor;
     }
 }
