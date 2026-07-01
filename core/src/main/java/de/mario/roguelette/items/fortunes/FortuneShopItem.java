@@ -46,7 +46,7 @@ public abstract class FortuneShopItem extends ShopItem implements GameEventListe
     @Override
     public boolean tryBuy(final GameState gameState) {
         if (!sold && canBuy(gameState.getPlayer()) && !gameState.getPlayer().getInventory().fortunesFull()) {
-            gameState.getPlayer().pay(getCost());
+            gameState.getPlayer().pay(getCost(gameState.getPlayer()));
             onBuy(gameState);
             sold = true;
             return true;

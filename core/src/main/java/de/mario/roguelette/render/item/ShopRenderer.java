@@ -207,7 +207,8 @@ public class ShopRenderer implements Renderable {
                 //TODO fix positioning with a glyph layout
                 float x = record.x + 10; // shift the x position a bit to the right
                 font.getData().setScale(2f);
-                font.draw(batch, "$" + record.shopItem.getCost(), x, y);
+                // player-discounted price (Bargain Hunter), so the tag matches what is charged
+                font.draw(batch, "$" + record.shopItem.getCost(gameState.getPlayer()), x, y);
             }
             batch.end();
 

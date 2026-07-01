@@ -46,6 +46,10 @@ public class Shop {
 
     private int restocks;
 
+    // Shop Voucher: while set, restocking costs nothing and doesn't advance the escalating
+    // restock counter. Cleared when the shop closes / a new shop stage starts.
+    private boolean freeRestocks = false;
+
     public Shop() {
         startStage(1, 1);
     }
@@ -61,6 +65,7 @@ public class Shop {
         this.deletesThisStage = 0;
         this.deleteBudget = pick(DELETE_BUDGET, stage);
         this.deleteBaseCost = pick(DELETE_BASE_COST, stage);
+        this.freeRestocks = false;
         restockItems();
         resetRestocks();
     }
@@ -76,7 +81,18 @@ public class Shop {
 
         applyPriceMultiplier(); // scale on every (re)stock so the Restock button keeps prices correct
 
-        restocks++;
+        if (!freeRestocks) {
+            restocks++; // a vouchered restock doesn't advance the price escalation
+        }
+    }
+
+    /** Shop Voucher: all restocks are free (and un-escalated) until the shop closes. */
+    public void setFreeRestocks(boolean freeRestocks) {
+        this.freeRestocks = freeRestocks;
+    }
+
+    public boolean isRestockFree() {
+        return freeRestocks;
     }
 
     /** @return whether another Segment Remover may still be offered/bought this stage. */

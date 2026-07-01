@@ -45,7 +45,7 @@ public class DeleteSegmentShopItem extends SegmentShopItem {
     public boolean tryBuy(final GameState gameState, int segmentIndex) {
         if (!sold && canBuy(gameState.getPlayer())) {
             gameState.getWheel().removeSegmentAt(segmentIndex);
-            gameState.getPlayer().pay(getCost());
+            gameState.getPlayer().pay(getCost(gameState.getPlayer()));
             gameState.setPendingDeleteItem(null);
             gameState.popState();
 

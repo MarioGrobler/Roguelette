@@ -65,6 +65,7 @@ public class GameState {
     // Progression
     private int currentStage = 1;
     private int currentRound = 1;
+    private boolean borrowedTime = false; // Borrowed Time chance: the next endRound doesn't count
     private int roundsInStage = STAGE_ROUNDS[0];
     private long requiredChips = STAGE_TARGETS[0];
     private final long finalGoal = STAGE_TARGETS[STAGE_TARGETS.length - 1];
@@ -357,6 +358,13 @@ public class GameState {
             return;
         }
 
+        if (borrowedTime) {
+            // Borrowed Time: this round doesn't count toward the stage's round limit — the round
+            // counter and the stage-clear check are both deferred by one spin.
+            borrowedTime = false;
+            return;
+        }
+
         currentRound++;
 
         if (currentRound > roundsInStage) {
@@ -553,10 +561,14 @@ public class GameState {
     }
 
     public int getScaledRestockPrice() {
+        if (shop.isRestockFree()) {
+            return 0; // Shop Voucher active for this shop visit
+        }
         return shop.getRestockPrice(getPriceMultiplier(currentStage));
     }
 
     public void startNextRound() {
+        shop.setFreeRestocks(false); // an active Shop Voucher expires when the shop closes
         setState(GameStateMode.DEFAULT);
     }
 
@@ -577,6 +589,15 @@ public class GameState {
     private int getPriceMultiplier(int stage) {
         if (stage <= 1) return 1;
         return Math.max(1, Math.round(STAGE_TARGETS[stage - 2] / 100f));
+    }
+
+    /** Borrowed Time: marks the current round as not counting toward the stage's round limit. */
+    public void activateBorrowedTime() {
+        borrowedTime = true;
+    }
+
+    public boolean isBorrowedTimeActive() {
+        return borrowedTime;
     }
 
     public int getCurrentStage() {

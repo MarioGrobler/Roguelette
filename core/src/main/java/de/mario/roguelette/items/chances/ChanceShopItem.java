@@ -41,7 +41,7 @@ public abstract class ChanceShopItem extends ShopItem {
     @Override
     public boolean tryBuy(final GameState gameState) {
         if (!sold && canBuy(gameState.getPlayer()) && !gameState.getPlayer().getInventory().chancesFull()) {
-            gameState.getPlayer().pay(getCost());
+            gameState.getPlayer().pay(getCost(gameState.getPlayer()));
             onBuy(gameState);
             sold = true;
             return true;

@@ -2,6 +2,7 @@ package de.mario.roguelette.items;
 
 import com.badlogic.gdx.math.MathUtils;
 import de.mario.roguelette.items.chances.AllOrNothingChance;
+import de.mario.roguelette.items.chances.BorrowedTimeChance;
 import de.mario.roguelette.items.chances.ChanceShopItem;
 import de.mario.roguelette.items.chances.DevilsDueChance;
 import de.mario.roguelette.items.chances.DoubleBallChance;
@@ -13,8 +14,11 @@ import de.mario.roguelette.items.chances.MagnetBallChance;
 import de.mario.roguelette.items.chances.MirrorFateChance;
 import de.mario.roguelette.items.chances.OverchargeChance;
 import de.mario.roguelette.items.chances.RicochetChance;
+import de.mario.roguelette.items.chances.ShopVoucherChance;
+import de.mario.roguelette.items.fortunes.BargainHunterFortune;
 import de.mario.roguelette.items.fortunes.BookkeeperFortune;
 import de.mario.roguelette.items.fortunes.ComebackKidFortune;
+import de.mario.roguelette.items.fortunes.DeepPocketsFortune;
 import de.mario.roguelette.items.fortunes.FortuneShopItem;
 import de.mario.roguelette.items.fortunes.HighRollerFortune;
 import de.mario.roguelette.items.fortunes.InterestFortune;
@@ -119,6 +123,8 @@ public class RandomItemGenerator {
         pool.add(rar(new InsuranceChance(), Rarity.COMMON));
         pool.add(rar(new LuckySevenChance(), Rarity.UNCOMMON));
         pool.add(rar(new RicochetChance(), Rarity.COMMON));
+        pool.add(rar(new ShopVoucherChance(), Rarity.COMMON));
+        pool.add(rar(new BorrowedTimeChance(), Rarity.RARE));
         pool.add(rar(new OverchargeChance(), Rarity.UNCOMMON));
         pool.add(rar(new MagnetBallChance(), Rarity.UNCOMMON));
         pool.add(rar(new DevilsDueChance(), Rarity.UNCOMMON));
@@ -145,6 +151,8 @@ public class RandomItemGenerator {
         pool.add(rar(new HighRollerFortune(), Rarity.UNCOMMON));
         pool.add(rar(new RentCollectorFortune(), Rarity.UNCOMMON));
         pool.add(rar(new PhoenixFeatherFortune(), Rarity.UNCOMMON));
+        pool.add(rar(new BargainHunterFortune(), Rarity.UNCOMMON));
+        pool.add(rar(new DeepPocketsFortune(), Rarity.RARE));
 
         // Duplicates ARE allowed: most fortunes stack as independent listeners, and the ones that
         // would otherwise snowball (Paint It Black / Scarlet Surge) instead use an explicit,

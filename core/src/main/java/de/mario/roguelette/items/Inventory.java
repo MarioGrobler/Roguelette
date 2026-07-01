@@ -1,6 +1,7 @@
 package de.mario.roguelette.items;
 
 import de.mario.roguelette.items.chances.ChanceShopItem;
+import de.mario.roguelette.items.fortunes.DeepPocketsFortune;
 import de.mario.roguelette.items.fortunes.FortuneShopItem;
 
 import java.util.ArrayList;
@@ -76,8 +77,12 @@ public class Inventory {
         return false;
     }
 
+    // Hard ceiling on chance slots however many Deep Pockets are stacked (the renderer squeezes
+    // the slot row to fit, so keep it within reason).
+    private static final int MAX_CHANCE_SLOTS = 9;
+
     public boolean chancesFull() {
-        return chances.size() >= chanceMaxSize;
+        return chances.size() >= getChanceMaxSize();
     }
 
     public boolean fortunesFull() {
@@ -96,7 +101,13 @@ public class Inventory {
         return fortuneMaxSize;
     }
 
+    /**
+     * The live chance capacity: the base size plus any Deep Pockets bonus, computed from the
+     * owned copies so buying/discarding the fortune adjusts it immediately (held chances above a
+     * shrunken cap stay — you just can't add more).
+     */
     public int getChanceMaxSize() {
-        return chanceMaxSize;
+        int bonus = DeepPocketsFortune.EXTRA_SLOTS_PER_COPY * countFortunes(DeepPocketsFortune.class);
+        return Math.min(MAX_CHANCE_SLOTS, chanceMaxSize + bonus);
     }
 }
